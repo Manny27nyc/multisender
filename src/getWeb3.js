@@ -33,7 +33,7 @@ let getWeb3 = () => {
           // Use Mist/MetaMask's provider.
           let web3 = new Web3(Web3.givenProvider)
           web3.eth.net.getId().then((netId) => {
-            let netIdName, trustApiName, explorerUrl;
+            let netIdName, trustApiName, explorerUrl, explorerAPIUrl, gasPriceAPIUrl, currencyTicker, currencyTickerName, blockchainName;
             console.log('netId', netId);
             netId = "" + netId
             switch (netId) {
@@ -41,37 +41,67 @@ let getWeb3 = () => {
                 netIdName = 'Mainnet'
                 trustApiName = 'api'
                 explorerUrl = 'https://etherscan.io'
+                explorerAPIUrl = 'https://api.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                gasPriceAPIUrl = 'https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                currencyTicker = 'ETH'
+                currencyTickerName = 'Ether'
+                blockchainName = 'Ethereum'
                 console.log('This is Foundation', netId)
                 break;
               case "3":
                 netIdName = 'Ropsten'
                 trustApiName = 'ropsten'
                 explorerUrl = 'https://ropsten.etherscan.io'
+                explorerAPIUrl = 'https://api-ropsten.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                gasPriceAPIUrl = 'https://api-ropsten.etherscan.io/api?module=gastracker&action=gasoracle&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                currencyTicker = 'ETH'
+                currencyTickerName = 'Ether'
+                blockchainName = 'Ethereum'
                 console.log('This is Ropsten', netId)
                 break;
               case "4":
                 netIdName = 'Rinkeby'
                 trustApiName = 'rinkeby'
                 explorerUrl = 'https://rinkeby.etherscan.io'
+                explorerAPIUrl = 'https://api-rinkeby.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                gasPriceAPIUrl = 'https://api-rinkeby.etherscan.io/api?module=gastracker&action=gasoracle&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                currencyTicker = 'ETH'
+                currencyTickerName = 'Ether'
+                blockchainName = 'Ethereum'
                 console.log('This is Rinkeby', netId)
                 break;
               case "42":
                 netIdName = 'Kovan'
                 trustApiName = 'kovan'
                 explorerUrl = 'https://kovan.etherscan.io'
+                explorerAPIUrl = 'https://api-kovan.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                gasPriceAPIUrl = 'https://api-kovan.etherscan.io/api?module=gastracker&action=gasoracle&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+                currencyTicker = 'ETH'
+                currencyTickerName = 'Ether'
+                blockchainName = 'Ethereum'
                 console.log('This is Kovan', netId)
                 break;
-              case "99":
-                netIdName = 'POA Core'
-                trustApiName = 'poa'
-                explorerUrl = 'https://poaexplorer.com'
-                console.log('This is Core', netId)
+              case "56":
+                netIdName = 'BSC'
+                trustApiName = 'bsc'
+                explorerUrl = 'https://bscscan.com'
+                explorerAPIUrl = 'https://api.bscscan.com/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_BSCSCAN_API_KEY"]
+                gasPriceAPIUrl = 'https://bscgas.info/gas'
+                currencyTicker = 'BNB'
+                currencyTickerName = 'BNB'
+                blockchainName = 'Binance Smart Chain'
+                console.log('This is Binance Smart Chain', netId)
                 break;
-              case "77":
-                netIdName = 'POA Sokol'
-                trustApiName = 'https://trust-sokol.herokuapp.com'
-                explorerUrl = 'https://sokol.poaexplorer.com'
-                console.log('This is Sokol', netId)
+              case "97":
+                netIdName = 'BSCTest'
+                trustApiName = 'bsctest'
+                explorerUrl = 'https://testnet.bscscan.com'
+                explorerAPIUrl = 'https://api-testnet.bscscan.com/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=' + process.env["REACT_APP_PROXY_MULTISENDER_BSCSCAN_API_KEY"]
+                gasPriceAPIUrl = 'https://bscgas.info/gas'
+                currencyTicker = 'BNB'
+                currencyTickerName = 'BNB'
+                blockchainName = 'Binance Smart Chain Test'
+                console.log('This is Binance Smart Chain Test', netId)
                 break;
               default:
                 netIdName = 'Unknown'
@@ -97,9 +127,15 @@ let getWeb3 = () => {
                 injectedWeb3: true,
                 defaultAccount,
                 trustApiName,
-                explorerUrl
+                explorerUrl,
+                explorerAPIUrl,
+                gasPriceAPIUrl,
+                currencyTicker,
+                currencyTickerName,
+                blockchainName,
               }
               _web3Config = results
+              console.log('results:', _web3Config);
               resolve(_web3Config)
             }).catch(err => {
               reject(err)

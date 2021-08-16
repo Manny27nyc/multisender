@@ -85,6 +85,7 @@ export class ThirdStep extends React.Component {
     super(props);
     this.tokenStore = props.UiStore.tokenStore;
     this.txStore = props.UiStore.txStore;
+    this.web3Store = props.UiStore.web3Store;
     this.gasPriceStore = props.UiStore.gasPriceStore;
     console.log(this.gasPriceStore.gasPricesArray)
     this.state = {
@@ -194,8 +195,8 @@ export class ThirdStep extends React.Component {
         const displayMultisendGasEthValue = parseFloat(Web3Utils.fromWei(multisendGasEthValue.toString())).toFixed(5)
         console.error('please fund you account in ')
         swal({
-          title: "Insufficient ETH balance",
-          text: `You don't have enough ETH to send to all addresses. Amount needed: ${displayMultisendGasEthValue} ETH`,
+          title: "Insufficient " + this.web3Store.currencyTicker + " balance",
+          text: `You don't have enough ${this.web3Store.currencyTicker} to send to all addresses. Amount needed: ${displayMultisendGasEthValue} ${this.web3Store.currencyTicker}`,
           icon: "error",
         })
         return
@@ -271,7 +272,7 @@ export class ThirdStep extends React.Component {
       // Ether
       return (
         <div className="send-info-i">
-          <p>Gas spent without Multisend, ETH</p>
+          <p>Gas spent without Multisend, {this.web3Store.currencyTicker}</p>
           <p className="send-info-amount">{displayTransferEthValue}</p>
         </div>
       )
@@ -279,14 +280,14 @@ export class ThirdStep extends React.Component {
       if (new BN(this.tokenStore.allowance).gte(new BN(this.tokenStore.totalBalance))){
         return (
           <div className="send-info-i">
-            <p>Gas spent without Multisend, ETH</p>
+            <p>Gas spent without Multisend, {this.web3Store.currencyTicker}</p>
             <p className="send-info-amount">{displayTransferEthValue}</p>
           </div>
         )
       } else {
         return (
           <div className="send-info-i">
-            <p>Gas spent without Multisend, ETH</p>
+            <p>Gas spent without Multisend, {this.web3Store.currencyTicker}</p>
             <p className="send-info-amount">{displayTransferEthValue}</p>
           </div>
         )
@@ -310,7 +311,7 @@ export class ThirdStep extends React.Component {
       // Ether
       return (
         <div className="send-info-i">
-          <p>Gas spent with Multisend, ETH</p>
+          <p>Gas spent with Multisend, {this.web3Store.currencyTicker}</p>
           <p className="send-info-amount">{displayMultisendGasEthValue}</p>
         </div>
       )
@@ -318,14 +319,14 @@ export class ThirdStep extends React.Component {
       if (new BN(this.tokenStore.allowance).gte(new BN(this.tokenStore.totalBalance))){
         return (
           <div className="send-info-i">
-            <p>Gas spent with Multisend, ETH</p>
+            <p>Gas spent with Multisend, {this.web3Store.currencyTicker}</p>
             <p className="send-info-amount">{displayMultisendGasEthValue}</p>
           </div>
         )
       } else {
         return (
           <div className="send-info-i">
-            <p>Gas spent with Multisend, ETH</p>
+            <p>Gas spent with Multisend, {this.web3Store.currencyTicker}</p>
             <p className="send-info-amount">N/A</p>
           </div>
         )
@@ -354,7 +355,7 @@ export class ThirdStep extends React.Component {
       // Ether
       return (
         <div className="send-info-i">
-          <p>Your gas savings, ETH</p>
+          <p>Your gas savings, {this.web3Store.currencyTicker}</p>
           <p className="send-info-amount">{sign}{displaySavedGasEthValue}</p>
         </div>
       )
@@ -362,14 +363,14 @@ export class ThirdStep extends React.Component {
       if (new BN(this.tokenStore.allowance).gte(new BN(this.tokenStore.totalBalance))){
         return (
           <div className="send-info-i">
-            <p>Your gas savings, ETH</p>
+            <p>Your gas savings, {this.web3Store.currencyTicker}</p>
             <p className="send-info-amount">{sign}{displaySavedGasEthValue}</p>
           </div>
         )
       } else {
         return (
           <div className="send-info-i">
-            <p>Your gas savings, ETH</p>
+            <p>Your gas savings, {this.web3Store.currencyTicker}</p>
             <p className="send-info-amount">N/A</p>
           </div>
         )
@@ -445,7 +446,7 @@ export class ThirdStep extends React.Component {
                 this.renderTokenAllowance()
               }
               <div className="send-info-i">
-                <p>Balance, ETH</p>
+                <p>Balance, {this.web3Store.currencyTicker}</p>
                 <p className="send-info-amount">{this.tokenStore.ethBalance}</p>
               </div>
               { this.renderMultisendGasInfo() }

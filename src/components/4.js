@@ -9,6 +9,7 @@ export class FourthStep extends React.Component {
     super(props);
     this.txStore = props.UiStore.txStore;
     this.tokenStore = props.UiStore.tokenStore;
+    this.web3Store = props.UiStore.web3Store;
     this.explorerUrl = props.UiStore.web3Store.explorerUrl;
     this.intervalId = null
     this.state = {
@@ -101,8 +102,8 @@ export class FourthStep extends React.Component {
       label = `Sign all ${totalNumberOftx} multisend transactions in MetaMask`
     }
     let label2 = "to send tokens to many recipients from the Multisend smart contract"
-    if ("ETH" === this.tokenStore.tokenSymbol) {
-      label2 = "to send ETH to many recipients from the Multisend smart contract"
+    if (this.web3Store.currencyTicker === this.tokenStore.tokenSymbol) {
+      label2 = "to send " + this.web3Store.currencyTicker + " to many recipients from the Multisend smart contract"
     }
     return (
       <div>
@@ -115,7 +116,7 @@ export class FourthStep extends React.Component {
             <ol>
               <li>Confirm all multisend transactions in MetaMask</li>
               <li>Wait for all transactions to be mined</li>
-              <li>Check transactions on etherscan</li>
+              <li>Check transactions on {this.explorerUrl}</li>
               <li>Press the <strong>Next</strong> button</li>
             </ol>
           </div>

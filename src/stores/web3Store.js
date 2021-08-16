@@ -1,14 +1,20 @@
 import { action, observable } from "mobx";
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
+import { sprintf } from 'sprintf-js'
 
 class Web3Store {
   @observable web3 = {};
   @observable defaultAccount = '';
+  @observable currencyTicker = '';
+  @observable currencyTickerName = '';
+  @observable blockchainName = '';
   @observable loading = true;
   @observable errors = [];
   @observable userTokens = [];
   @observable explorerUrl = '';
+  @observable explorerAPIUrl = '';
+  @observable gasPriceAPIUrl = '';
   @observable startedUrl = window.location.hash
   constructor(rootStore) {
     this.userTokensInitialized = false
@@ -16,6 +22,10 @@ class Web3Store {
   @action
   setExplorerUrl(url){
     this.explorerUrl = url
+  }
+  @action
+  setExplorerAPIUrl(url){
+    this.explorerAPIUrl = url
   }
   @action
   setStartedUrl(url){
@@ -27,14 +37,31 @@ class Web3Store {
       if ('' !== this.explorerUrl) {
         return this
       }
-      const {web3Instance, defaultAccount, netId, netIdName} = web3Config;
+      const {
+          web3Instance,
+          defaultAccount,
+          netId,
+          netIdName,
+          explorerUrl,
+          explorerAPIUrl,
+          gasPriceAPIUrl,
+          currencyTicker,
+          currencyTickerName,
+          blockchainName,
+      } = web3Config;
+      console.log('web3Config:', web3Config);
       this.defaultAccount = defaultAccount;
       // this.web3 = new Web3(web3Instance.currentProvider);
       this.web3 = web3Instance;
       this.netId = netId;
       this.netIdName = netIdName;
+      this.currencyTicker = currencyTicker
+      this.currencyTickerName = currencyTickerName
+      this.blockchainName = blockchainName
+      this.gasPriceAPIUrl = gasPriceAPIUrl
+      this.setExplorerUrl(explorerUrl)
+      this.setExplorerAPIUrl(explorerAPIUrl)
       await this.getUserTokens(web3Config)
-      this.setExplorerUrl(web3Config.explorerUrl)
       console.log('web3 loaded')
       return this
     }).catch((e) => {
@@ -50,14 +77,12 @@ class Web3Store {
         resolve(this)
         return
       }
-      const blockchain_network = this.netIdName.toLowerCase()
-      let api_suffix = '';
-      if ('mainnet' !== blockchain_network) {
-          api_suffix = '-' + blockchain_network
-      }
-      const etherscanApiKey = process.env["REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"]
+      const url = sprintf(this.explorerAPIUrl, defaultAccount)
+      console.log('explorerAPIUrl:', this.explorerAPIUrl);
+      console.log('defaultAccount:', defaultAccount);
+      console.log('url:', url);
       window.fetch(
-        `https://api${api_suffix}.etherscan.io/api?module=account&action=tokentx&address=${defaultAccount}&startblock=0&endblock=999999999&sort=desc&apikey=${etherscanApiKey}`
+        url
       ).then((res) => {
         return res.json()
       }).then((res) => {
@@ -98,7 +123,7 @@ class Web3Store {
         let tokensUnique = Object.keys(tokensUniqueObj).map(tokenAddress => tokensUniqueObj[tokenAddress])
         tokensUnique.unshift({
           value: '0x000000000000000000000000000000000000bEEF',
-          label: "ETH - Ethereum Native Currency"
+          label: this.currencyTicker + " - " + this.blockchainName + " Native Currency"
         })
         this.userTokens = tokensUnique;
         this.userTokensInitialized = true

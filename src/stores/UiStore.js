@@ -5,8 +5,8 @@ import TxStore from './txStore';
 
 class UiStore {
   constructor() {
-    this.gasPriceStore = new GasPriceStore()
     this.web3Store = new Web3Store(this)
+    this.gasPriceStore = new GasPriceStore(this)
     this.tokenStore = new TokenStore(this)
     this.txStore = new TxStore(this)
   }

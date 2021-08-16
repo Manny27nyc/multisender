@@ -11,17 +11,16 @@ export class Retry extends React.Component {
     super(props)
     this.onTxInput = this.onTxInput.bind(this)
     this.txStore = props.UiStore.txStore;
-    
+
     this.state = {
       txHash: ''
     }
   }
-  
+
   onTxInput(e){
     const txHash = e.target.value;
     setTimeout(async () => {
       if(txHash.length === 66){
-        // https://kovan.etherscan.io/tx/0x234cb7950c9239ce64033647e14b8fdd915106cad24c8ae57b0eb9052e8ec79a
         const txdata = await this.txStore.getTxReceipt(txHash);
         console.log(txdata)
         this.setState({txHash})

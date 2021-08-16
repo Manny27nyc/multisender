@@ -207,7 +207,7 @@ class TokenStore {
       await this.getTokenSymbol(tokenAddress)
     } else {
       this.tokenAddress = tokenAddress;
-      this.tokenSymbol = "ETH"
+      this.tokenSymbol = this.web3Store.currencyTicker
       this.decimals = 18;
       this.defAccTokenBalance = this.ethBalance;
     }

@@ -5,30 +5,45 @@ class GasPriceStore {
   @observable gasPrices = {};
   @observable loading = true;
   @observable gasPricesArray = [
-    {label: 'fast', value: '21'},
-    {label: 'standard', value: '21'},
-    {label: 'slow', value: '21'},
-    {label: 'instant', value: '21'},
+    {label: 'fast', labelETH: 'FastGasPrice', value: '21'},
+    {label: 'standard', labelETH: 'ProposeGasPrice', value: '21'},
+    {label: 'slow', labelETH: 'SafeGasPrice', value: '21'},
+    {label: 'instant', labelETH: 'FastGasPrice', value: '21'},
   ];
   @observable selectedGasPrice = '22'
   @observable selectedGasShare = '50'
   gasPricePromise = null;
   constructor(rootStore) {
+    this.web3Store = rootStore.web3Store;
     this.getGasPrices()
   }
 
   async getGasPrices(){
-    this.gasPricePromise = fetch('https://gasprice.poa.network/').then((response) => {
-      return response.json()
-    }).then((data) => {
-      this.gasPricesArray.map((v) => {
-        v.value = data[v.label]
-        v.label = `${v.label}: ${data[v.label]} gwei`
-        return v;
-      })
-      this.selectedGasPrice = data.fast;
-      this.gasPrices = data;
-      this.loading = false;
+    this.gasPricePromise = this.web3Store.getWeb3Promise().then((web3Obj) => {
+        const {
+          gasPriceAPIUrl
+        } = web3Obj
+        fetch(gasPriceAPIUrl).then((response) => {
+          return response.json()
+        }).then((data) => {
+          // ETH: {"status":"1","message":"OK","result":{"LastBlock":"12720101","SafeGasPrice":"5","ProposeGasPrice":"8","FastGasPrice":"15"}}
+          // BNB: {"timestamp":"2021-06-28T03:42:59.364Z","slow":5,"standard":5,"fast":5,"instant":5,"block_time":3,"last_block":8680171}
+          // BNB error: {"timestamp": string,"error": "Oracle is restarting"}
+          this.gasPricesArray.map((v) => {
+            const value = 'undefined' !== typeof data[v.label] ? 2 * data[v.label] : data[v.labelETH]
+            if ('fast' === v.label) {
+                this.selectedGasPrice = value;
+            }
+            v.value = value
+            v.label = `${v.label}: ${value} gwei`
+            return v
+          })
+          this.gasPrices = data;
+          this.loading = false;
+        }).catch((e) => {
+          this.loading = true;
+          console.error(e)
+        })
     }).catch((e) => {
       this.loading = true;
       console.error(e)
