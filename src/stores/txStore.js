@@ -184,13 +184,20 @@ class TxStore {
       })
       totalGas += gas
     } else {
+      // TODO: function multiTransferTokenEqual_71p(
+      //   address _token,
+      //   address[] calldata _addresses,
+      //   uint256 _amount
+      // )
       const encodedData = await multisender.methods.multiTransferToken_a4A(token_address, addresses_to_send, balances_to_send, balances_to_send_sum).encodeABI({from: this.web3Store.defaultAccount})
-      const gas = await web3.eth.estimateGas({
+      const txObj = {
           from: this.web3Store.defaultAccount,
           data: encodedData,
           value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
           to: await this.tokenStore.proxyMultiSenderAddress()
-      })
+      }
+      console.log("estimateGas multiTransferToken_a4A txObj=", txObj)
+      const gas = await web3.eth.estimateGas(txObj)
       totalGas += gas
     }
     slice--;
@@ -236,6 +243,7 @@ class TxStore {
             to: await this.tokenStore.proxyMultiSenderAddress()
         })
         console.log('gas', gas)
+        console.log('ethValue', ethValue.toString())
         let tx = multisender.methods.multiTransfer_OST(addresses_to_send, balances_to_send)
         .send({
           from: this.web3Store.defaultAccount,
@@ -261,20 +269,29 @@ class TxStore {
         })
       } else {
         let encodedData = await multisender.methods.multiTransferToken_a4A(token_address, addresses_to_send, balances_to_send, balances_to_send_sum).encodeABI({from: this.web3Store.defaultAccount})
-        let gas = await web3.eth.estimateGas({
+        const txObj = {
             from: this.web3Store.defaultAccount,
             data: encodedData,
             value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
             to: await this.tokenStore.proxyMultiSenderAddress()
-        })
+        }
+        let gas = await web3.eth.estimateGas(txObj)
+        console.log('txObj', txObj)
         console.log('gas', gas)
-        let tx = multisender.methods.multiTransferToken_a4A(token_address, addresses_to_send, balances_to_send, balances_to_send_sum)
-        .send({
+        console.log('ethValue', ethValue.toString())
+        const optionsObj = {
           from: this.web3Store.defaultAccount,
           gasPrice: this.gasPriceStore.standardInHex,
           gas: Web3Utils.toHex(gas),
           value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-        })
+        }
+        console.log('optionsObj', optionsObj)
+        let tx = multisender.methods.multiTransferToken_a4A(
+          token_address,
+          addresses_to_send,
+          balances_to_send,
+          balances_to_send_sum
+        ).send(optionsObj)
 
         .once('transactionHash', (hash) => {
           this.txHashToIndex[hash] = this.txs.length

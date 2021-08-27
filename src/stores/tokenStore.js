@@ -250,47 +250,51 @@ class TokenStore {
     this.totalBalance = 0;
     this.invalid_addresses = [];
     this.balances_to_send = [];
-    return new Promise((res, rej) => {
-      try {
-        this.jsonAddresses.forEach((account, index) => {
-          if(Object.keys(account).length === 0){
-            rej({message: `There was an error parsing ${JSON.stringify(account)} at line ${index}`})
-          }
-          let address = Object.keys(account)[0].replace(/\s/g, "").replace("0X", "0x")
-          address = Web3Utils.toChecksumAddress(address)
-          if(!Web3Utils.isAddress(address)){
-            this.invalid_addresses.push(address);
-          } else {
-            let balance = Object.values(account)[0];
-            this.totalBalance = new BN(balance).plus(this.totalBalance).toString(10)
-            // console.log('balance,', balance)
-            balance = this.multiplier.times(balance);
-            const indexAddr = this.addresses_to_send.indexOf(address);
-            if(indexAddr === -1){
-              this.addresses_to_send.push(address);
-              this.balances_to_send.push(balance.toString(10))
-            } else {
-              if(this.dublicates.indexOf(address) === -1){
-                this.dublicates.push(address);
-              }
-              this.balances_to_send[indexAddr] = (new BN(this.balances_to_send[indexAddr]).plus(balance)).toString(10)
-            }
-          }
-        })
-
-        this.jsonAddresses = this.addresses_to_send.map((addr, index) => {
-          let obj = {}
-          obj[addr] = (new BN(this.balances_to_send[index]).div(this.multiplier)).toString(10)
-          return obj;
-        })
-        res(this.jsonAddresses)
-        if(this.tokenAddress === "0x000000000000000000000000000000000000bEEF") {
-          this.allowance = this.totalBalance
+    await Promise.all(
+      this.jsonAddresses.map(async (account, index) => {
+        if(Object.keys(account).length === 0){
+          throw new Exception(`There was an error parsing ${JSON.stringify(account)} at line ${index}`)
         }
-      } catch(e){
-        rej(e)
-      }
+        let address = Object.keys(account)[0].replace(/\s/g, "").replace("0X", "0x")
+        address = Web3Utils.toChecksumAddress(address)
+        if(!Web3Utils.isAddress(address)){
+          console.log("Invalid address", address)
+          this.invalid_addresses.push(address)
+          return
+        }
+        const web3 = this.web3Store.web3
+        const code = await web3.eth.getCode(address)
+        if ('' !== code && '0x' !== code.toLowerCase()) {
+          console.log("Non-epty code for", address, "'" + code + "'")
+          this.invalid_addresses.push(address)
+          return
+        }
+        let balance = Object.values(account)[0];
+        this.totalBalance = new BN(balance).plus(this.totalBalance).toString(10)
+        // console.log('balance,', balance)
+        balance = this.multiplier.times(balance);
+        const indexAddr = this.addresses_to_send.indexOf(address);
+        if(indexAddr === -1){
+          this.addresses_to_send.push(address);
+          this.balances_to_send.push(balance.toString(10))
+        } else {
+          if(this.dublicates.indexOf(address) === -1){
+            this.dublicates.push(address);
+          }
+          this.balances_to_send[indexAddr] = (new BN(this.balances_to_send[indexAddr]).plus(balance)).toString(10)
+        }
+      })
+    )
+
+    this.jsonAddresses = this.addresses_to_send.map((addr, index) => {
+      let obj = {}
+      obj[addr] = (new BN(this.balances_to_send[index]).div(this.multiplier)).toString(10)
+      return obj;
     })
+    if(this.tokenAddress === "0x000000000000000000000000000000000000bEEF") {
+      this.allowance = this.totalBalance
+    }
+    return this.jsonAddresses
   }
 
   @computed get totalBalanceWithDecimals() {
