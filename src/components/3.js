@@ -162,6 +162,12 @@ export class ThirdStep extends React.Component {
     const approvePlusMultisendGas = (new BN(multisendGas)).plus(new BN(approveGas))
     if (approvePlusMultisendGas.gt(new BN(transferGas))) {
       // no savings
+      console.log("_updateCurrentFeeImpl: approvePlusMultisendGas > transferGas",
+        approvePlusMultisendGas.toString(10),
+        transferGas,
+        multisendGas,
+        approveGas
+      )
       this.tokenStore.setCurrentFee('0')
       return
     }
@@ -171,6 +177,15 @@ export class ThirdStep extends React.Component {
     const newCurrentFee = savedGasPerTxEthValue.times(new BN(parseInt(this.gasPriceStore.selectedGasShare))).div(100)
     const newCurrentFeeRounded = newCurrentFee.dp(0, 1)
     this.tokenStore.setCurrentFee(newCurrentFeeRounded.toString(10))
+    console.log("_updateCurrentFeeImpl", multisendGas, approveGas, transferGas,
+      gasPrice,
+      approvePlusMultisendGas.toString(10),
+      savedGas.toString(10),
+      savedGasEthValue.toString(10),
+      savedGasPerTxEthValue.toString(10),
+      newCurrentFee.toString(10),
+      newCurrentFeeRounded.toString(10)
+    )
   }
 
   onNext = async (wizard) => {

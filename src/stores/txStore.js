@@ -112,6 +112,7 @@ class TxStore {
         from: this.web3Store.defaultAccount,
         data: encodedData,
         to: this.tokenStore.tokenAddress,
+        gas: this.web3Store.maxBlockGas,
     })
   }
 
@@ -123,7 +124,8 @@ class TxStore {
           from: this.web3Store.defaultAccount,
           // data: null,
           value: value,
-          to: to
+          to: to,
+          gas: this.web3Store.maxBlockGas,
       })
     } else {
       const token = new web3.eth.Contract(ERC20ABI, this.tokenStore.tokenAddress);
@@ -132,6 +134,7 @@ class TxStore {
           from: this.web3Store.defaultAccount,
           data: encodedData,
           to: this.tokenStore.tokenAddress,
+          gas: this.web3Store.maxBlockGas,
       })
     }
   }
@@ -176,12 +179,15 @@ class TxStore {
       const encodedData = await multisender.methods.multiTransfer_OST(addresses_to_send, balances_to_send).encodeABI({from: this.web3Store.defaultAccount})
       // console.log("web3.eth.estimateGas:", web3.eth.estimateGas)
       // console.log("web3.eth:", web3.eth)
-      const gas = await web3.eth.estimateGas({
-          from: this.web3Store.defaultAccount,
-          data: encodedData,
-          value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-          to: await this.tokenStore.proxyMultiSenderAddress()
-      })
+      const txObj = {
+        from: this.web3Store.defaultAccount,
+        data: encodedData,
+        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+        to: await this.tokenStore.proxyMultiSenderAddress(),
+        gas: this.web3Store.maxBlockGas,
+      }
+      console.log("estimateGas multiTransfer_OST txObj=", txObj)
+      const gas = await web3.eth.estimateGas(txObj)
       totalGas += gas
     } else {
       // TODO: function multiTransferTokenEqual_71p(
@@ -189,12 +195,19 @@ class TxStore {
       //   address[] calldata _addresses,
       //   uint256 _amount
       // )
-      const encodedData = await multisender.methods.multiTransferToken_a4A(token_address, addresses_to_send, balances_to_send, balances_to_send_sum).encodeABI({from: this.web3Store.defaultAccount})
+      const encodedData = await multisender.methods.multiTransferToken_a4A(
+        token_address,
+        addresses_to_send,
+        balances_to_send,
+        balances_to_send_sum).encodeABI({
+          from: this.web3Store.defaultAccount
+        })
       const txObj = {
           from: this.web3Store.defaultAccount,
           data: encodedData,
           value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-          to: await this.tokenStore.proxyMultiSenderAddress()
+          to: await this.tokenStore.proxyMultiSenderAddress(),
+          gas: this.web3Store.maxBlockGas,
       }
       console.log("estimateGas multiTransferToken_a4A txObj=", txObj)
       const gas = await web3.eth.estimateGas(txObj)
@@ -229,6 +242,7 @@ class TxStore {
     } else {
       ethValue = new BN(currentFee)
     }
+    console.log('ethValue', ethValue.toString())
     console.log('slice', slice, addresses_to_send[0], balances_to_send[0], addPerTx)
     const web3 = this.web3Store.web3;
     const multisender = new web3.eth.Contract(MultiSenderAbi, await this.tokenStore.proxyMultiSenderAddress());
@@ -240,10 +254,10 @@ class TxStore {
             from: this.web3Store.defaultAccount,
             data: encodedData,
             value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-            to: await this.tokenStore.proxyMultiSenderAddress()
+            to: await this.tokenStore.proxyMultiSenderAddress(),
+            gas: this.web3Store.maxBlockGas,
         })
         console.log('gas', gas)
-        console.log('ethValue', ethValue.toString())
         let tx = multisender.methods.multiTransfer_OST(addresses_to_send, balances_to_send)
         .send({
           from: this.web3Store.defaultAccount,
@@ -273,12 +287,12 @@ class TxStore {
             from: this.web3Store.defaultAccount,
             data: encodedData,
             value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-            to: await this.tokenStore.proxyMultiSenderAddress()
+            to: await this.tokenStore.proxyMultiSenderAddress(),
+            gas: this.web3Store.maxBlockGas,
         }
-        let gas = await web3.eth.estimateGas(txObj)
         console.log('txObj', txObj)
+        let gas = await web3.eth.estimateGas(txObj)
         console.log('gas', gas)
-        console.log('ethValue', ethValue.toString())
         const optionsObj = {
           from: this.web3Store.defaultAccount,
           gasPrice: this.gasPriceStore.standardInHex,

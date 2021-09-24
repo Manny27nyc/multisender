@@ -26,11 +26,11 @@ class GasPriceStore {
         fetch(gasPriceAPIUrl).then((response) => {
           return response.json()
         }).then((data) => {
-          // ETH: {"status":"1","message":"OK","result":{"LastBlock":"12720101","SafeGasPrice":"5","ProposeGasPrice":"8","FastGasPrice":"15"}}
-          // BNB: {"timestamp":"2021-06-28T03:42:59.364Z","slow":5,"standard":5,"fast":5,"instant":5,"block_time":3,"last_block":8680171}
+          // ETH: {"status":"1","message":"OK","result":{"LastBlock":"13286764","SafeGasPrice":"47","ProposeGasPrice":"47","FastGasPrice":"47","suggestBaseFee":"46.111878343","gasUsedRatio":"0.0812090079979204,0.571384990268454,0.411636499092615,0.200022766666667,0.901801833333333"}}
+          // BNB: {"status":"1","message":"OK","result":{"LastBlock":"11185672","SafeGasPrice":"5" ,"ProposeGasPrice":"5" ,"FastGasPrice":"10","UsdPrice":"373.83"}}
           // BNB error: {"timestamp": string,"error": "Oracle is restarting"}
           this.gasPricesArray.map((v) => {
-            const value = 'undefined' !== typeof data[v.label] ? 2 * data[v.label] : data[v.labelETH]
+            const value = data[v.labelETH]
             if ('fast' === v.label) {
                 this.selectedGasPrice = value;
             }

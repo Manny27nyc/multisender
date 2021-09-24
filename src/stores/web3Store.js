@@ -9,6 +9,7 @@ class Web3Store {
   @observable currencyTicker = '';
   @observable currencyTickerName = '';
   @observable blockchainName = '';
+  @observable maxBlockGas = 8000000;
   @observable loading = true;
   @observable errors = [];
   @observable userTokens = [];
@@ -62,6 +63,8 @@ class Web3Store {
       this.setExplorerUrl(explorerUrl)
       this.setExplorerAPIUrl(explorerAPIUrl)
       await this.getUserTokens(web3Config)
+      const block = await this.web3.eth.getBlock("latest")
+      this.maxBlockGas = block.gasLimit
       console.log('web3 loaded')
       return this
     }).catch((e) => {
