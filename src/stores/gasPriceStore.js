@@ -10,7 +10,7 @@ class GasPriceStore {
     {label: 'slow', labelETH: 'SafeGasPrice', value: '21'},
     {label: 'instant', labelETH: 'FastGasPrice', value: '21'},
   ];
-  @observable selectedGasPrice = '22'
+  @observable selectedGasPrice = 22
   @observable gasPriceBase = '0'
   @observable selectedGasShare = '50'
   gasPricePromise = null;
@@ -36,7 +36,7 @@ class GasPriceStore {
           this.gasPricesArray.map((v) => {
             const value = result[v.labelETH]
             if ('fast' === v.label) {
-                this.selectedGasPrice = value;
+                this.selectedGasPrice = parseFloat(value);
             }
             v.value = value
             v.label = `${v.label}: ${value} gwei`
@@ -57,21 +57,21 @@ class GasPriceStore {
   }
 
   @computed get standardInHex() {
-    const toWei = Web3Utils.toWei(this.selectedGasPrice.toString(), 'gwei')
+    const toWei = Web3Utils.toWei(this.selectedGasPrice.toFixed(9).toString(), 'gwei')
     return Web3Utils.toHex(toWei)
   }
   @computed get standardBaseInHex() {
-    const toWei = Web3Utils.toWei(this.gasPriceBase.toString(), 'gwei')
+    const toWei = Web3Utils.toWei(this.gasPriceBase.toFixed(9).toString(), 'gwei')
     return Web3Utils.toHex(toWei)
   }
   @computed get fullGasPriceInHex() {
-    const maxFeePerGas = parseFloat(this.gasPriceStore.selectedGasPrice) + parseFloat(this.gasPriceStore.gasPriceBase)
-    const toWei = Web3Utils.toWei(maxFeePerGas.toString(), 'gwei')
+    const maxFeePerGas = parseFloat(this.selectedGasPrice) + parseFloat(this.gasPriceBase)
+    const toWei = Web3Utils.toWei(maxFeePerGas.toFixed(9).toString(), 'gwei')
     return Web3Utils.toHex(toWei)
   }
   @action
   setSelectedGasPrice(value) {
-    this.selectedGasPrice = value;
+    this.selectedGasPrice = parseFloat(value);
   }
 
   @action
