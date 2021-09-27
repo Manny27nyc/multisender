@@ -11,6 +11,7 @@ class GasPriceStore {
     {label: 'instant', labelETH: 'FastGasPrice', value: '21'},
   ];
   @observable selectedGasPrice = '22'
+  @observable gasPriceBase = '0'
   @observable selectedGasShare = '50'
   gasPricePromise = null;
   constructor(rootStore) {
@@ -29,8 +30,11 @@ class GasPriceStore {
           // ETH: {"status":"1","message":"OK","result":{"LastBlock":"13286764","SafeGasPrice":"47","ProposeGasPrice":"47","FastGasPrice":"47","suggestBaseFee":"46.111878343","gasUsedRatio":"0.0812090079979204,0.571384990268454,0.411636499092615,0.200022766666667,0.901801833333333"}}
           // BNB: {"status":"1","message":"OK","result":{"LastBlock":"11185672","SafeGasPrice":"5" ,"ProposeGasPrice":"5" ,"FastGasPrice":"10","UsdPrice":"373.83"}}
           // BNB error: {"timestamp": string,"error": "Oracle is restarting"}
+          const {
+            result
+          } = data
           this.gasPricesArray.map((v) => {
-            const value = data[v.labelETH]
+            const value = result[v.labelETH]
             if ('fast' === v.label) {
                 this.selectedGasPrice = value;
             }
@@ -38,7 +42,9 @@ class GasPriceStore {
             v.label = `${v.label}: ${value} gwei`
             return v
           })
-          this.gasPrices = data;
+          if ('undefined' !== typeof result['suggestBaseFee'])
+          this.gasPriceBase = parseFloat(result['suggestBaseFee']) * 1.2 // +20%
+          this.gasPrices = result;
           this.loading = false;
         }).catch((e) => {
           this.loading = true;
@@ -52,6 +58,15 @@ class GasPriceStore {
 
   @computed get standardInHex() {
     const toWei = Web3Utils.toWei(this.selectedGasPrice.toString(), 'gwei')
+    return Web3Utils.toHex(toWei)
+  }
+  @computed get standardBaseInHex() {
+    const toWei = Web3Utils.toWei(this.gasPriceBase.toString(), 'gwei')
+    return Web3Utils.toHex(toWei)
+  }
+  @computed get fullGasPriceInHex() {
+    const maxFeePerGas = parseFloat(this.gasPriceStore.selectedGasPrice) + parseFloat(this.gasPriceStore.gasPriceBase)
+    const toWei = Web3Utils.toWei(maxFeePerGas.toString(), 'gwei')
     return Web3Utils.toHex(toWei)
   }
   @action

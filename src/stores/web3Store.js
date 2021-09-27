@@ -10,6 +10,7 @@ class Web3Store {
   @observable currencyTickerName = '';
   @observable blockchainName = '';
   @observable maxBlockGas = 8000000;
+  @observable isEIP1559 = false;
   @observable loading = true;
   @observable errors = [];
   @observable userTokens = [];
@@ -64,6 +65,7 @@ class Web3Store {
       this.setExplorerAPIUrl(explorerAPIUrl)
       await this.getUserTokens(web3Config)
       const block = await this.web3.eth.getBlock("latest")
+      this.isEIP1559 = ("undefined" !== typeof block.baseFeePerGas)
       this.maxBlockGas = block.gasLimit
       console.log('web3 loaded')
       return this

@@ -84,8 +84,27 @@ class TxStore {
     const web3 = this.web3Store.web3;
     const token = new web3.eth.Contract(ERC20ABI, this.tokenStore.tokenAddress);
     try{
-      return token.methods.approve(await this.tokenStore.proxyMultiSenderAddress(), this.tokenStore.totalBalanceWithDecimals)
-      .send({from: this.web3Store.defaultAccount, gasPrice: this.gasPriceStore.standardInHex})
+      let optionsObj = {
+        from: this.web3Store.defaultAccount,
+      }
+      if (this.web3Store.isEIP1559) {
+        optionsObj = {
+          maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
+          maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
+          ...optionsObj,
+        }
+      } else {
+        optionsObj = {
+          gasPrice: this.gasPriceStore.standardInHex,
+          ...optionsObj,
+        }
+      }
+      console.log('optionsObj', optionsObj)
+      return token.methods.approve(
+        await this.tokenStore.proxyMultiSenderAddress(),
+        this.tokenStore.totalBalanceWithDecimals
+      )
+      .send(optionsObj)
       .once('transactionHash', (hash) => {
         this.approval = hash
         this.txHashToIndex[hash] = index;
@@ -258,13 +277,25 @@ class TxStore {
             gas: this.web3Store.maxBlockGas,
         })
         console.log('gas', gas)
-        let tx = multisender.methods.multiTransfer_OST(addresses_to_send, balances_to_send)
-        .send({
+        let optionsObj = {
           from: this.web3Store.defaultAccount,
-          gasPrice: this.gasPriceStore.standardInHex,
           gas: Web3Utils.toHex(gas),
           value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-        })
+        }
+        if (this.web3Store.isEIP1559) {
+          optionsObj = {
+            maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
+            maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
+            ...optionsObj,
+          }
+        } else {
+          optionsObj = {
+            gasPrice: this.gasPriceStore.standardInHex,
+            ...optionsObj,
+          }
+        }
+        let tx = multisender.methods.multiTransfer_OST(addresses_to_send, balances_to_send)
+        .send(optionsObj)
 
         .once('transactionHash', (hash) => {
           this.txHashToIndex[hash] = this.txs.length
@@ -293,11 +324,22 @@ class TxStore {
         console.log('txObj', txObj)
         let gas = await web3.eth.estimateGas(txObj)
         console.log('gas', gas)
-        const optionsObj = {
+        let optionsObj = {
           from: this.web3Store.defaultAccount,
-          gasPrice: this.gasPriceStore.standardInHex,
           gas: Web3Utils.toHex(gas),
           value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+        }
+        if (this.web3Store.isEIP1559) {
+          optionsObj = {
+            maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
+            maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
+            ...optionsObj,
+          }
+        } else {
+          optionsObj = {
+            gasPrice: this.gasPriceStore.standardInHex,
+            ...optionsObj,
+          }
         }
         console.log('optionsObj', optionsObj)
         let tx = multisender.methods.multiTransferToken_a4A(

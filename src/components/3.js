@@ -158,7 +158,7 @@ export class ThirdStep extends React.Component {
 
   _updateCurrentFeeImpl() {
     const { multisendGas, approveGas, transferGas } = this.state
-    const gasPrice = this.gasPriceStore.standardInHex
+    const gasPrice = this.gasPriceStore.fullGasPriceInHex
     const approvePlusMultisendGas = (new BN(multisendGas)).plus(new BN(approveGas))
     if (approvePlusMultisendGas.gt(new BN(transferGas))) {
       // no savings
@@ -280,7 +280,7 @@ export class ThirdStep extends React.Component {
   }
 
   renderTransferGasInfo() {
-    const gasPrice = this.gasPriceStore.standardInHex
+    const gasPrice = this.gasPriceStore.fullGasPriceInHex
     const transferEthValue = new BN(gasPrice).times(new BN(this.state.transferGas))
     const displayTransferEthValue = parseFloat(Web3Utils.fromWei(transferEthValue.toString())).toFixed(5)
     if ("0x000000000000000000000000000000000000bEEF" === this.tokenStore.tokenAddress) {
@@ -311,14 +311,14 @@ export class ThirdStep extends React.Component {
   }
 
   getMultisendPlusApproveGasEthValue() {
-    const gasPrice = this.gasPriceStore.standardInHex
+    const gasPrice = this.gasPriceStore.fullGasPriceInHex
     const approvePlusMultisendGas = (new BN(this.state.multisendGas)).plus(new BN(this.state.approveGas))
     const multisendGasEthValue = new BN(gasPrice).times(approvePlusMultisendGas)
     return multisendGasEthValue
   }
 
   renderMultisendGasInfo() {
-    const gasPrice = this.gasPriceStore.standardInHex
+    const gasPrice = this.gasPriceStore.fullGasPriceInHex
     const approvePlusMultisendGas = (new BN(this.state.multisendGas)).plus(new BN(this.state.approveGas))
     const multisendGasEthValue = new BN(gasPrice).times(approvePlusMultisendGas)
     const displayMultisendGasEthValue = parseFloat(Web3Utils.fromWei(multisendGasEthValue.toString())).toFixed(5)
@@ -351,7 +351,7 @@ export class ThirdStep extends React.Component {
 
   renderSavingsGasInfo() {
     const { multisendGas, approveGas, transferGas } = this.state
-    const gasPrice = this.gasPriceStore.standardInHex
+    const gasPrice = this.gasPriceStore.fullGasPriceInHex
     const transferEthValue = new BN(gasPrice).times(new BN(this.state.transferGas))
     const displayTransferEthValue = Web3Utils.fromWei(transferEthValue.toString())
     // const approveGasEthValue = new BN(gasPrice).times(new BN(this.state.approveGas))
