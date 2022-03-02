@@ -2,7 +2,7 @@ import { action, observable, computed } from "mobx";
 import Web3Utils from 'web3-utils';
 
 class GasPriceStore {
-  @observable gasPrices = {};
+  // @observable gasPrices = {};
   @observable loading = true;
   @observable gasPricesArray = [
     {label: 'fast', labelETH: 'FastGasPrice', value: '21'},
@@ -24,6 +24,21 @@ class GasPriceStore {
         const {
           gasPriceAPIUrl
         } = web3Obj
+        if (null === gasPriceAPIUrl) {
+          // BSC
+          this.gasPricesArray.map((v) => {
+            const value = 5
+            v.value = value
+            if ('fast' === v.label) {
+                this.selectedGasPrice = parseFloat(value) + 0.1;
+                v.value = this.selectedGasPrice
+            }
+            v.label = `${v.label}: ${value} gwei`
+            return v
+          })
+          this.loading = false;
+          return
+        }
         fetch(gasPriceAPIUrl).then((response) => {
           return response.json()
         }).then((data) => {
@@ -42,9 +57,10 @@ class GasPriceStore {
             v.label = `${v.label}: ${value} gwei`
             return v
           })
-          if ('undefined' !== typeof result['suggestBaseFee'])
-          this.gasPriceBase = parseFloat(result['suggestBaseFee']) * 1.2 // +20%
-          this.gasPrices = result;
+          if ('undefined' !== typeof result['suggestBaseFee']) {
+            this.gasPriceBase = parseFloat(result['suggestBaseFee']) * 1.2 // +20%
+          }
+          // this.gasPrices = result;
           this.loading = false;
         }).catch((e) => {
           this.loading = true;
