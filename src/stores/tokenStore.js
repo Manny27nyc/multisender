@@ -13,7 +13,8 @@ class TokenStore {
   @observable tokenAddress = "";
   @observable defAccTokenBalance = "";
   @observable allowance = "";
-  @observable currentFee = "0";
+  // set non-zero reasonable value to ensure correct gas calculation
+  @observable currentFee = "10000000000000";
   @observable tokenSymbol = "";
   @observable ethBalance = "";
   @observable balances_to_send = [];

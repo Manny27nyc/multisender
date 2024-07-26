@@ -149,7 +149,11 @@ export class ThirdStep extends React.Component {
             // Gas Used by Transaction: 81,933 (70.54%) for ERC20
             // Gas Limit: 170,018
             // Gas Used by Transaction: 135,628 (79.77%) for ERC777 // TODO: detect token type
-            const multisendGas = Math.floor(parseInt(multisendGasOrig) * 0.71);
+            //
+            // Real life USDC token sending:
+            // Gas Limit & Usage by Txn: 917,832 | 605,912 (66.02%)
+            // @see https://etherscan.io/tx/0x23d3f8611b108010b3a0899337c6d4c6a90992655f1aaa49eae962aafabf8cc1
+            const multisendGas = Math.floor(parseInt(multisendGasOrig) * 0.66);
             const approveGas = await this.txStore.getApproveTxGas();
             this.setState({ multisendGas, approveGas });
             this.updateCurrentFee();
@@ -189,7 +193,8 @@ export class ThirdStep extends React.Component {
         multisendGas,
         approveGas
       );
-      this.tokenStore.setCurrentFee("0");
+      // set non-zero reasonable value to ensure correct gas calculation
+      this.tokenStore.setCurrentFee("10000000000000");
       return;
     }
     const savedGas = new BN(transferGas).minus(approvePlusMultisendGas);
