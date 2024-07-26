@@ -40,8 +40,8 @@ export class Header extends React.Component {
           </form>
         </div>
         <div className="multisend-container">
-          Supports Ethereum Mainnet, Ropsten, Rinkeby, Kovan, Goerli and Binance
-          Smart Chain Mainnet and Testnet
+          Supports Ethereum Mainnet, Sepolia and Holesky testnets, Binance Smart
+          Chain Mainnet and Testnet, and Polygon Mainnet and Amoy Testnet
         </div>
         <GithubCorner
           href="https://github.com/olegabr/multisender"

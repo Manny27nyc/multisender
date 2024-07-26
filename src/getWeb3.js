@@ -67,12 +67,12 @@ let getWeb3 = () => {
                   blockchainName = "Ethereum";
                   console.log("This is Foundation", netId);
                   break;
-                case "3":
-                  netIdName = "Ropsten";
-                  trustApiName = "ropsten";
-                  explorerUrl = "https://ropsten.etherscan.io";
+                case "11155111":
+                  netIdName = "Sepolia";
+                  trustApiName = "sepolia";
+                  explorerUrl = "https://sepolia.etherscan.io";
                   explorerAPIUrl =
-                    "https://api-ropsten.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                    "https://api-sepolia.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
                     process.env[
                       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
                     ];
@@ -83,15 +83,15 @@ let getWeb3 = () => {
                     ];
                   currencyTicker = "ETH";
                   currencyTickerName = "Ether";
-                  blockchainName = "Ethereum";
-                  console.log("This is Ropsten", netId);
+                  blockchainName = "Ethereum Sepolia Testnet";
+                  console.log("This is Sepolia", netId);
                   break;
-                case "4":
-                  netIdName = "Rinkeby";
-                  trustApiName = "rinkeby";
-                  explorerUrl = "https://rinkeby.etherscan.io";
+                case "17000":
+                  netIdName = "Holesky";
+                  trustApiName = "holesky";
+                  explorerUrl = "https://holesky.etherscan.io";
                   explorerAPIUrl =
-                    "https://api-rinkeby.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                    "https://api-holesky.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
                     process.env[
                       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
                     ];
@@ -102,28 +102,85 @@ let getWeb3 = () => {
                     ];
                   currencyTicker = "ETH";
                   currencyTickerName = "Ether";
-                  blockchainName = "Ethereum";
-                  console.log("This is Rinkeby", netId);
+                  blockchainName = "Ethereum Holesky Testnet";
+                  console.log("This is Holesky", netId);
                   break;
-                case "42":
-                  netIdName = "Kovan";
-                  trustApiName = "kovan";
-                  explorerUrl = "https://kovan.etherscan.io";
-                  explorerAPIUrl =
-                    "https://api-kovan.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
-                    process.env[
-                      "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
-                    ];
-                  gasPriceAPIUrl =
-                    "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=" +
-                    process.env[
-                      "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
-                    ];
-                  currencyTicker = "ETH";
-                  currencyTickerName = "Ether";
-                  blockchainName = "Ethereum";
-                  console.log("This is Kovan", netId);
-                  break;
+                // case "5":
+                //   netIdName = "Goerli";
+                //   trustApiName = "goerli";
+                //   explorerUrl = "https://goerli.etherscan.io";
+                //   explorerAPIUrl =
+                //     "https://api-goerli.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   gasPriceAPIUrl =
+                //     "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   currencyTicker = "ETH";
+                //   currencyTickerName = "Ether";
+                //   blockchainName = "Ethereum Görli Testnet";
+                //   console.log("This is Goerli", netId);
+                //   break;
+                // case "3":
+                //   netIdName = "Ropsten";
+                //   trustApiName = "ropsten";
+                //   explorerUrl = "https://ropsten.etherscan.io";
+                //   explorerAPIUrl =
+                //     "https://api-ropsten.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   gasPriceAPIUrl =
+                //     "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   currencyTicker = "ETH";
+                //   currencyTickerName = "Ether";
+                //   blockchainName = "Ethereum";
+                //   console.log("This is Ropsten", netId);
+                //   break;
+                // case "4":
+                //   netIdName = "Rinkeby";
+                //   trustApiName = "rinkeby";
+                //   explorerUrl = "https://rinkeby.etherscan.io";
+                //   explorerAPIUrl =
+                //     "https://api-rinkeby.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   gasPriceAPIUrl =
+                //     "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   currencyTicker = "ETH";
+                //   currencyTickerName = "Ether";
+                //   blockchainName = "Ethereum";
+                //   console.log("This is Rinkeby", netId);
+                //   break;
+                // case "42":
+                //   netIdName = "Kovan";
+                //   trustApiName = "kovan";
+                //   explorerUrl = "https://kovan.etherscan.io";
+                //   explorerAPIUrl =
+                //     "https://api-kovan.etherscan.io/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   gasPriceAPIUrl =
+                //     "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=" +
+                //     process.env[
+                //       "REACT_APP_PROXY_MULTISENDER_ETHERSCAN_API_KEY"
+                //     ];
+                //   currencyTicker = "ETH";
+                //   currencyTickerName = "Ether";
+                //   blockchainName = "Ethereum";
+                //   console.log("This is Kovan", netId);
+                //   break;
                 case "56":
                   netIdName = "BSC";
                   trustApiName = "bsc";
@@ -153,6 +210,44 @@ let getWeb3 = () => {
                   currencyTickerName = "BNB";
                   blockchainName = "Binance Smart Chain Test";
                   console.log("This is Binance Smart Chain Test", netId);
+                  break;
+                case "137":
+                  netIdName = "Polygon";
+                  trustApiName = "polygon";
+                  explorerUrl = "https://polygonscan.com";
+                  explorerAPIUrl =
+                    "https://api.polygonscan.com/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                    process.env[
+                      "REACT_APP_PROXY_MULTISENDER_POLYGONSCAN_API_KEY"
+                    ];
+                  gasPriceAPIUrl =
+                    "https://api.polygonscan.com/api?module=gastracker&action=gasoracle&apikey=" +
+                    process.env[
+                      "REACT_APP_PROXY_MULTISENDER_POLYGONSCAN_API_KEY"
+                    ];
+                  currencyTicker = "MATIC";
+                  currencyTickerName = "MATIC";
+                  blockchainName = "Polygon";
+                  console.log("This is Polygon", netId);
+                  break;
+                case "80002":
+                  netIdName = "Amoy";
+                  trustApiName = "polygon";
+                  explorerUrl = "https://amoy.polygonscan.com";
+                  explorerAPIUrl =
+                    "https://api-amoy.polygonscan.com/api?module=account&action=tokentx&address=%1$s&startblock=0&endblock=999999999&sort=desc&apikey=" +
+                    process.env[
+                      "REACT_APP_PROXY_MULTISENDER_POLYGONSCAN_API_KEY"
+                    ];
+                  gasPriceAPIUrl =
+                    "https://api.polygonscan.com/api?module=gastracker&action=gasoracle&apikey=" +
+                    process.env[
+                      "REACT_APP_PROXY_MULTISENDER_POLYGONSCAN_API_KEY"
+                    ];
+                  currencyTicker = "MATIC";
+                  currencyTickerName = "MATIC";
+                  blockchainName = "Polygon Amoy";
+                  console.log("This is Polygon Amoy Testnet", netId);
                   break;
                 default:
                   netIdName = "Unknown";
