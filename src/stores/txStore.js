@@ -220,6 +220,74 @@ class TxStore {
     return totalGas;
   }
 
+  is_equal_values(balances_to_send) {
+    const amount = balances_to_send[0];
+    for (let i = 1; i < balances_to_send.length; i++) {
+      let b = balances_to_send[i];
+      if (0 !== b.comparedTo(amount)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  async get_web3_method(token_address, addresses_to_send, balances_to_send) {
+    const amount = balances_to_send[0];
+    const is_equal_values = this.is_equal_values(balances_to_send);
+
+    const totalInWei = balances_to_send.reduce((total, val) => {
+      return total.plus(new BN(val));
+    }, new BN("0"));
+    const balances_to_send_sum = totalInWei.toString(10);
+
+    const web3 = this.web3Store.web3;
+    const multisender = new web3.eth.Contract(
+      MultiSenderAbi,
+      await this.tokenStore.proxyMultiSenderAddress()
+    );
+
+    if (token_address === "0x000000000000000000000000000000000000bEEF") {
+      if (is_equal_values) {
+        return await multisender.methods.multiTransferEqual_L1R(
+          addresses_to_send,
+          amount
+        );
+      } else {
+        return await multisender.methods.multiTransfer_OST(
+          addresses_to_send,
+          balances_to_send
+        );
+      }
+    } else {
+      if (is_equal_values) {
+        return await multisender.methods.multiTransferTokenEqual_71p(
+          token_address,
+          addresses_to_send,
+          amount
+        );
+      } else {
+        return await multisender.methods.multiTransferToken_a4A(
+          token_address,
+          addresses_to_send,
+          balances_to_send,
+          balances_to_send_sum
+        );
+      }
+    }
+  }
+
+  getEthValue(token_address, balances_to_send, currentFee) {
+    const totalInWei = balances_to_send.reduce((total, val) => {
+      return total.plus(new BN(val));
+    }, new BN("0"));
+
+    if (token_address === "0x000000000000000000000000000000000000bEEF") {
+      const totalInEth = Web3Utils.fromWei(totalInWei.toString());
+      return new BN(currentFee).plus(totalInEth);
+    }
+    return new BN(currentFee);
+  }
+
   async getMultisendGas({ slice, addPerTx }) {
     let totalGas = 0;
 
@@ -231,17 +299,15 @@ class TxStore {
     const end = slice * addPerTx;
     addresses_to_send = addresses_to_send.slice(start, end);
     balances_to_send = balances_to_send.slice(start, end);
-    const totalInWei = balances_to_send.reduce((total, val) => {
-      return total.plus(new BN(val));
-    }, new BN("0"));
-    const balances_to_send_sum = totalInWei.toString(10);
-    let ethValue;
-    if (token_address === "0x000000000000000000000000000000000000bEEF") {
-      const totalInEth = Web3Utils.fromWei(totalInWei.toString());
-      ethValue = new BN(currentFee).plus(totalInEth);
-    } else {
-      ethValue = new BN(currentFee);
-    }
+    // const totalInWei = balances_to_send.reduce((total, val) => {
+    //   return total.plus(new BN(val));
+    // }, new BN("0"));
+
+    // const amount = balances_to_send[0];
+    // const is_equal_values = this.is_equal_values(balances_to_send);
+
+    // const balances_to_send_sum = totalInWei.toString(10);
+    let ethValue = getEthValue(token_address, balances_to_send, currentFee);
     console.log(
       "slice",
       slice,
@@ -250,54 +316,89 @@ class TxStore {
       addPerTx
     );
     const web3 = this.web3Store.web3;
-    const multisender = new web3.eth.Contract(
-      MultiSenderAbi,
-      await this.tokenStore.proxyMultiSenderAddress()
+    // const multisender = new web3.eth.Contract(
+    //   MultiSenderAbi,
+    //   await this.tokenStore.proxyMultiSenderAddress()
+    // );
+
+    let method = get_web3_method(
+      token_address,
+      addresses_to_send,
+      balances_to_send
     );
 
-    if (token_address === "0x000000000000000000000000000000000000bEEF") {
-      const encodedData = await multisender.methods
-        .multiTransfer_OST(addresses_to_send, balances_to_send)
-        .encodeABI({ from: this.web3Store.defaultAccount });
-      // console.log("web3.eth.estimateGas:", web3.eth.estimateGas)
-      // console.log("web3.eth:", web3.eth)
-      const txObj = {
-        from: this.web3Store.defaultAccount,
-        data: encodedData,
-        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-        to: await this.tokenStore.proxyMultiSenderAddress(),
-        gas: this.web3Store.maxBlockGas,
-      };
-      console.log("estimateGas multiTransfer_OST txObj=", txObj);
-      const gas = await web3.eth.estimateGas(txObj);
-      totalGas += gas;
-    } else {
-      // TODO: function multiTransferTokenEqual_71p(
-      //   address _token,
-      //   address[] calldata _addresses,
-      //   uint256 _amount
-      // )
-      const encodedData = await multisender.methods
-        .multiTransferToken_a4A(
-          token_address,
-          addresses_to_send,
-          balances_to_send,
-          balances_to_send_sum
-        )
-        .encodeABI({
-          from: this.web3Store.defaultAccount,
-        });
-      const txObj = {
-        from: this.web3Store.defaultAccount,
-        data: encodedData,
-        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-        to: await this.tokenStore.proxyMultiSenderAddress(),
-        gas: this.web3Store.maxBlockGas,
-      };
-      console.log("estimateGas multiTransferToken_a4A txObj=", txObj);
-      const gas = await web3.eth.estimateGas(txObj);
-      totalGas += gas;
-    }
+    const encodedData = method.encodeABI({
+      from: this.web3Store.defaultAccount,
+    });
+    const txObj = {
+      from: this.web3Store.defaultAccount,
+      data: encodedData,
+      value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      to: await this.tokenStore.proxyMultiSenderAddress(),
+      gas: this.web3Store.maxBlockGas,
+    };
+    console.log("estimateGas txObj=", txObj);
+    const gas = await web3.eth.estimateGas(txObj);
+    totalGas += gas;
+
+    // if (token_address === "0x000000000000000000000000000000000000bEEF") {
+    //   let encodedData = null;
+    //   if (is_equal_values) {
+    //     encodedData = await multisender.methods
+    //       .multiTransferEqual_L1R(addresses_to_send, amount)
+    //       .encodeABI({ from: this.web3Store.defaultAccount });
+    //   } else {
+    //     encodedData = await multisender.methods
+    //       .multiTransfer_OST(addresses_to_send, balances_to_send)
+    //       .encodeABI({ from: this.web3Store.defaultAccount });
+    //   }
+    //   // console.log("web3.eth.estimateGas:", web3.eth.estimateGas)
+    //   // console.log("web3.eth:", web3.eth)
+    //   const txObj = {
+    //     from: this.web3Store.defaultAccount,
+    //     data: encodedData,
+    //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+    //     to: await this.tokenStore.proxyMultiSenderAddress(),
+    //     gas: this.web3Store.maxBlockGas,
+    //   };
+    //   console.log("estimateGas multiTransfer_OST txObj=", txObj);
+    //   const gas = await web3.eth.estimateGas(txObj);
+    //   totalGas += gas;
+    // } else {
+    //   let encodedData = null;
+    //   if (is_equal_values) {
+    //     encodedData = await multisender.methods
+    //       .multiTransferTokenEqual_71p(token_address, addresses_to_send, amount)
+    //       .encodeABI({
+    //         from: this.web3Store.defaultAccount,
+    //       });
+    //   } else {
+    //     encodedData = await multisender.methods
+    //       .multiTransferToken_a4A(
+    //         token_address,
+    //         addresses_to_send,
+    //         balances_to_send,
+    //         balances_to_send_sum
+    //       )
+    //       .encodeABI({
+    //         from: this.web3Store.defaultAccount,
+    //       });
+    //   }
+    //   const txObj = {
+    //     from: this.web3Store.defaultAccount,
+    //     data: encodedData,
+    //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+    //     to: await this.tokenStore.proxyMultiSenderAddress(),
+    //     gas: this.web3Store.maxBlockGas,
+    //   };
+    //   if (is_equal_values) {
+    //     console.log("estimateGas multiTransferTokenEqual_71p txObj=", txObj);
+    //   } else {
+    //     console.log("estimateGas multiTransferToken_a4A txObj=", txObj);
+    //   }
+    //   const gas = await web3.eth.estimateGas(txObj);
+    //   totalGas += gas;
+    // }
     slice--;
     if (slice > 0) {
       totalGas += await this.getMultisendGas({ slice, addPerTx });
@@ -317,17 +418,21 @@ class TxStore {
     const end = slice * addPerTx;
     addresses_to_send = addresses_to_send.slice(start, end);
     balances_to_send = balances_to_send.slice(start, end);
-    const totalInWei = balances_to_send.reduce((total, val) => {
-      return total.plus(new BN(val));
-    }, new BN("0"));
-    const balances_to_send_sum = totalInWei.toString(10);
-    let ethValue;
-    if (token_address === "0x000000000000000000000000000000000000bEEF") {
-      const totalInEth = Web3Utils.fromWei(totalInWei.toString());
-      ethValue = new BN(currentFee).plus(totalInEth);
-    } else {
-      ethValue = new BN(currentFee);
-    }
+    // const totalInWei = balances_to_send.reduce((total, val) => {
+    //   return total.plus(new BN(val));
+    // }, new BN("0"));
+
+    // const amount = balances_to_send[0];
+    // const is_equal_values = this.is_equal_values(balances_to_send);
+
+    // const balances_to_send_sum = totalInWei.toString(10);
+    let ethValue = getEthValue(token_address, balances_to_send, currentFee);
+    // if (token_address === "0x000000000000000000000000000000000000bEEF") {
+    //   const totalInEth = Web3Utils.fromWei(totalInWei.toString());
+    //   ethValue = new BN(currentFee).plus(totalInEth);
+    // } else {
+    //   ethValue = new BN(currentFee);
+    // }
     console.log("ethValue", ethValue.toString());
     console.log(
       "slice",
@@ -337,146 +442,250 @@ class TxStore {
       addPerTx
     );
     const web3 = this.web3Store.web3;
-    const multisender = new web3.eth.Contract(
-      MultiSenderAbi,
-      await this.tokenStore.proxyMultiSenderAddress()
-    );
+    // const multisender = new web3.eth.Contract(
+    //   MultiSenderAbi,
+    //   await this.tokenStore.proxyMultiSenderAddress()
+    // );
 
     try {
-      if (token_address === "0x000000000000000000000000000000000000bEEF") {
-        let encodedData = await multisender.methods
-          .multiTransfer_OST(addresses_to_send, balances_to_send)
-          .encodeABI({ from: this.web3Store.defaultAccount });
-        let gas = await web3.eth.estimateGas({
-          from: this.web3Store.defaultAccount,
-          data: encodedData,
-          value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-          to: await this.tokenStore.proxyMultiSenderAddress(),
-          gas: this.web3Store.maxBlockGas,
-        });
-        console.log("gas", gas);
-        let optionsObj = {
-          from: this.web3Store.defaultAccount,
-          gas: Web3Utils.toHex(gas),
-          value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-        };
-        if (this.web3Store.isEIP1559) {
-          optionsObj = {
-            maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
-            maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
-            ...optionsObj,
-          };
-        } else {
-          optionsObj = {
-            gasPrice: this.gasPriceStore.standardInHex,
-            ...optionsObj,
-          };
-        }
-        let tx = multisender.methods
-          .multiTransfer_OST(addresses_to_send, balances_to_send)
-          .send(optionsObj)
+      let method = get_web3_method(
+        token_address,
+        addresses_to_send,
+        balances_to_send
+      );
 
-          .once("transactionHash", (hash) => {
-            this.txHashToIndex[hash] = this.txs.length;
-            this.txs.push({
-              status: "pending",
-              name: `Sending Batch #${this.txs.length} ${
-                this.tokenStore.tokenSymbol
-              }\n
-            From ${addresses_to_send[0].substring(
-              0,
-              7
-            )} to: ${addresses_to_send[addresses_to_send.length - 1].substring(
-                0,
-                7
-              )}
-          `,
-              hash,
-            });
-          })
-          .once("receipt", async (receipt) => {
-            await this.getTxStatus(receipt.transactionHash);
-          })
-          .on("error", (error) => {
-            swal("Error!", error.message, "error");
-            console.log(error);
-            // re-send
-            this._multisend({ slice, addPerTx });
-          });
+      const encodedData = method.encodeABI({
+        from: this.web3Store.defaultAccount,
+      });
+      const txObj = {
+        from: this.web3Store.defaultAccount,
+        data: encodedData,
+        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+        to: await this.tokenStore.proxyMultiSenderAddress(),
+        gas: this.web3Store.maxBlockGas,
+      };
+      console.log("txObj", txObj);
+      let gas = await web3.eth.estimateGas(txObj);
+      console.log("gas", gas);
+      let optionsObj = {
+        from: this.web3Store.defaultAccount,
+        gas: Web3Utils.toHex(gas),
+        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      };
+      if (this.web3Store.isEIP1559) {
+        optionsObj = {
+          maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
+          maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
+          ...optionsObj,
+        };
       } else {
-        let encodedData = await multisender.methods
-          .multiTransferToken_a4A(
-            token_address,
-            addresses_to_send,
-            balances_to_send,
-            balances_to_send_sum
-          )
-          .encodeABI({ from: this.web3Store.defaultAccount });
-        const txObj = {
-          from: this.web3Store.defaultAccount,
-          data: encodedData,
-          value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-          to: await this.tokenStore.proxyMultiSenderAddress(),
-          gas: this.web3Store.maxBlockGas,
+        optionsObj = {
+          gasPrice: this.gasPriceStore.standardInHex,
+          ...optionsObj,
         };
-        console.log("txObj", txObj);
-        let gas = await web3.eth.estimateGas(txObj);
-        console.log("gas", gas);
-        let optionsObj = {
-          from: this.web3Store.defaultAccount,
-          gas: Web3Utils.toHex(gas),
-          value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
-        };
-        if (this.web3Store.isEIP1559) {
-          optionsObj = {
-            maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
-            maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
-            ...optionsObj,
-          };
-        } else {
-          optionsObj = {
-            gasPrice: this.gasPriceStore.standardInHex,
-            ...optionsObj,
-          };
-        }
-        console.log("optionsObj", optionsObj);
-        let tx = multisender.methods
-          .multiTransferToken_a4A(
-            token_address,
-            addresses_to_send,
-            balances_to_send,
-            balances_to_send_sum
-          )
-          .send(optionsObj)
-
-          .once("transactionHash", (hash) => {
-            this.txHashToIndex[hash] = this.txs.length;
-            this.txs.push({
-              status: "pending",
-              name: `Sending Batch #${this.txs.length} ${
-                this.tokenStore.tokenSymbol
-              }\n
+      }
+      let tx = method
+        .send(optionsObj)
+        .once("transactionHash", (hash) => {
+          this.txHashToIndex[hash] = this.txs.length;
+          this.txs.push({
+            status: "pending",
+            name: `Sending Batch #${this.txs.length} ${
+              this.tokenStore.tokenSymbol
+            }\n
             From ${addresses_to_send[0].substring(
               0,
               7
             )} to: ${addresses_to_send[addresses_to_send.length - 1].substring(
-                0,
-                7
-              )}
+              0,
+              7
+            )}
           `,
-              hash,
-            });
-          })
-          .once("receipt", async (receipt) => {
-            await this.getTxStatus(receipt.transactionHash);
-          })
-          .on("error", (error) => {
-            swal("Error!", error.message, "error");
-            console.log(error);
-            // re-send
-            this._multisend({ slice, addPerTx });
+            hash,
           });
-      }
+        })
+        .once("receipt", async (receipt) => {
+          await this.getTxStatus(receipt.transactionHash);
+        })
+        .on("error", (error) => {
+          swal("Error!", error.message, "error");
+          console.log(error);
+          // re-send
+          this._multisend({ slice, addPerTx });
+        });
+
+      // if (token_address === "0x000000000000000000000000000000000000bEEF") {
+      //   let encodedData = null;
+      //   if (is_equal_values) {
+      //     encodedData = await multisender.methods
+      //       .multiTransferEqual_L1R(addresses_to_send, amount)
+      //       .encodeABI({ from: this.web3Store.defaultAccount });
+      //   } else {
+      //     encodedData = await multisender.methods
+      //       .multiTransfer_OST(addresses_to_send, balances_to_send)
+      //       .encodeABI({ from: this.web3Store.defaultAccount });
+      //   }
+      //   let gas = await web3.eth.estimateGas({
+      //     from: this.web3Store.defaultAccount,
+      //     data: encodedData,
+      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //     to: await this.tokenStore.proxyMultiSenderAddress(),
+      //     gas: this.web3Store.maxBlockGas,
+      //   });
+      //   console.log("gas", gas);
+      //   let optionsObj = {
+      //     from: this.web3Store.defaultAccount,
+      //     gas: Web3Utils.toHex(gas),
+      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //   };
+      //   if (this.web3Store.isEIP1559) {
+      //     optionsObj = {
+      //       maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
+      //       maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
+      //       ...optionsObj,
+      //     };
+      //   } else {
+      //     optionsObj = {
+      //       gasPrice: this.gasPriceStore.standardInHex,
+      //       ...optionsObj,
+      //     };
+      //   }
+      //   let tx = null;
+      //   if (is_equal_values) {
+      //     tx = await multisender.methods
+      //       .multiTransferEqual_L1R(addresses_to_send, amount)
+      //       .send(optionsObj);
+      //   } else {
+      //     tx = multisender.methods
+      //       .multiTransfer_OST(addresses_to_send, balances_to_send)
+      //       .send(optionsObj);
+      //   }
+      //   tx.once("transactionHash", (hash) => {
+      //     this.txHashToIndex[hash] = this.txs.length;
+      //     this.txs.push({
+      //       status: "pending",
+      //       name: `Sending Batch #${this.txs.length} ${
+      //         this.tokenStore.tokenSymbol
+      //       }\n
+      //       From ${addresses_to_send[0].substring(
+      //         0,
+      //         7
+      //       )} to: ${addresses_to_send[addresses_to_send.length - 1].substring(
+      //         0,
+      //         7
+      //       )}
+      //     `,
+      //       hash,
+      //     });
+      //   })
+      //     .once("receipt", async (receipt) => {
+      //       await this.getTxStatus(receipt.transactionHash);
+      //     })
+      //     .on("error", (error) => {
+      //       swal("Error!", error.message, "error");
+      //       console.log(error);
+      //       // re-send
+      //       this._multisend({ slice, addPerTx });
+      //     });
+      // } else {
+      //   let encodedData = null;
+      //   if (is_equal_values) {
+      //     encodedData = await multisender.methods
+      //       .multiTransferTokenEqual_71p(
+      //         token_address,
+      //         addresses_to_send,
+      //         amount
+      //       )
+      //       .encodeABI({
+      //         from: this.web3Store.defaultAccount,
+      //       });
+      //   } else {
+      //     encodedData = await multisender.methods
+      //       .multiTransferToken_a4A(
+      //         token_address,
+      //         addresses_to_send,
+      //         balances_to_send,
+      //         balances_to_send_sum
+      //       )
+      //       .encodeABI({
+      //         from: this.web3Store.defaultAccount,
+      //       });
+      //   }
+      //   const txObj = {
+      //     from: this.web3Store.defaultAccount,
+      //     data: encodedData,
+      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //     to: await this.tokenStore.proxyMultiSenderAddress(),
+      //     gas: this.web3Store.maxBlockGas,
+      //   };
+      //   console.log("txObj", txObj);
+      //   let gas = await web3.eth.estimateGas(txObj);
+      //   console.log("gas", gas);
+      //   let optionsObj = {
+      //     from: this.web3Store.defaultAccount,
+      //     gas: Web3Utils.toHex(gas),
+      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //   };
+      //   if (this.web3Store.isEIP1559) {
+      //     optionsObj = {
+      //       maxFeePerGas: this.gasPriceStore.fullGasPriceInHex,
+      //       maxPriorityFeePerGas: this.gasPriceStore.standardInHex,
+      //       ...optionsObj,
+      //     };
+      //   } else {
+      //     optionsObj = {
+      //       gasPrice: this.gasPriceStore.standardInHex,
+      //       ...optionsObj,
+      //     };
+      //   }
+      //   console.log("optionsObj", optionsObj);
+      //   let tx = null;
+      //   if (is_equal_values) {
+      //     tx = await multisender.methods
+      //       .multiTransferTokenEqual_71p(
+      //         token_address,
+      //         addresses_to_send,
+      //         amount
+      //       )
+      //       .send(optionsObj);
+      //   } else {
+      //     tx = await multisender.methods
+      //       .multiTransferToken_a4A(
+      //         token_address,
+      //         addresses_to_send,
+      //         balances_to_send,
+      //         balances_to_send_sum
+      //       )
+      //       .send(optionsObj);
+      //   }
+      //   tx.once("transactionHash", (hash) => {
+      //     this.txHashToIndex[hash] = this.txs.length;
+      //     this.txs.push({
+      //       status: "pending",
+      //       name: `Sending Batch #${this.txs.length} ${
+      //         this.tokenStore.tokenSymbol
+      //       }\n
+      //       From ${addresses_to_send[0].substring(
+      //         0,
+      //         7
+      //       )} to: ${addresses_to_send[addresses_to_send.length - 1].substring(
+      //         0,
+      //         7
+      //       )}
+      //     `,
+      //       hash,
+      //     });
+      //   })
+      //     .once("receipt", async (receipt) => {
+      //       await this.getTxStatus(receipt.transactionHash);
+      //     })
+      //     .on("error", (error) => {
+      //       swal("Error!", error.message, "error");
+      //       console.log(error);
+      //       // re-send
+      //       this._multisend({ slice, addPerTx });
+      //     });
+      // }
       slice--;
       if (slice > 0) {
         this._multisend({ slice, addPerTx });

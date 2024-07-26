@@ -46,6 +46,7 @@ class GasPriceStore {
           .then((data) => {
             // ETH: {"status":"1","message":"OK","result":{"LastBlock":"13286764","SafeGasPrice":"47","ProposeGasPrice":"47","FastGasPrice":"47","suggestBaseFee":"46.111878343","gasUsedRatio":"0.0812090079979204,0.571384990268454,0.411636499092615,0.200022766666667,0.901801833333333"}}
             // BNB: {"status":"1","message":"OK","result":{"LastBlock":"11185672","SafeGasPrice":"5" ,"ProposeGasPrice":"5" ,"FastGasPrice":"10","UsdPrice":"373.83"}}
+            // POL: {"status":"1","message":"OK","result":{"LastBlock":"59821309","SafeGasPrice":"30","ProposeGasPrice":"30","FastGasPrice":"30","suggestBaseFee":"0.000000078", "gasUsedRatio":"0.457447433333333,0.424251133333333,0.2920443,0.288993866666667,0.5445044","UsdPrice":"0.790774268006168"}}
             // BNB error: {"timestamp": string,"error": "Oracle is restarting"}
             const { result } = data;
             this.gasPricesArray.map((v) => {
