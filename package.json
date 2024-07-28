@@ -36,7 +36,7 @@
     "web3": "^4.11.1"
   },
   "scripts": {
-    "build-css": "sass src/assets/stylesheets/application.scss -o src/assets/stylesheets --output-style=compressed",
+    "build-css": "sass src/assets/stylesheets/application.scss:src/assets/stylesheets/application.css --style=compressed",
     "watch-css": "nodemon -e scss -x \"npm run build-css\"",
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
