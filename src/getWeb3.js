@@ -1,4 +1,4 @@
-import Web3 from "web3";
+import { Web3 } from "web3";
 
 const getAccounts = () => {
   return new Promise(function (resolve, reject) {

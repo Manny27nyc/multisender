@@ -1,6 +1,5 @@
 import { action, observable } from "mobx";
 import getWeb3 from "../getWeb3";
-import Web3 from "web3";
 import { sprintf } from "sprintf-js";
 
 class Web3Store {
@@ -54,7 +53,6 @@ class Web3Store {
         } = web3Config;
         console.log("web3Config:", web3Config);
         this.defaultAccount = defaultAccount;
-        // this.web3 = new Web3(web3Instance.currentProvider);
         this.web3 = web3Instance;
         this.netId = netId;
         this.netIdName = netIdName;
@@ -67,7 +65,7 @@ class Web3Store {
         await this.getUserTokens(web3Config);
         const block = await this.web3.eth.getBlock("latest");
         this.isEIP1559 = "undefined" !== typeof block.baseFeePerGas;
-        this.maxBlockGas = block.gasLimit;
+        this.maxBlockGas = block.gasLimit.asUintN();
         console.log("web3 loaded");
         return this;
       })

@@ -1,7 +1,7 @@
 import React from "react";
 import { inject, observer } from "mobx-react";
 import BN from "bignumber.js";
-import Web3Utils from "web3-utils";
+import { fromWei, toWei } from "web3-utils";
 import swal from "sweetalert";
 import Select from "react-select";
 import Form from "react-validation/build/form";
@@ -243,13 +243,10 @@ export class ThirdStep extends React.Component {
         return;
       }
       const multisendGasEthValue = this.getMultisendPlusApproveGasEthValue();
-      const ethBalanceWei = Web3Utils.toWei(
-        this.tokenStore.ethBalance,
-        "ether"
-      );
+      const ethBalanceWei = toWei(this.tokenStore.ethBalance, "ether");
       if (multisendGasEthValue.gt(new BN(ethBalanceWei))) {
         const displayMultisendGasEthValue = parseFloat(
-          Web3Utils.fromWei(multisendGasEthValue.toString())
+          fromWei(multisendGasEthValue.toString())
         ).toFixed(5);
         console.error("please fund you account in ");
         swal({
@@ -341,7 +338,7 @@ export class ThirdStep extends React.Component {
       new BN(this.state.transferGas)
     );
     const displayTransferEthValue = parseFloat(
-      Web3Utils.fromWei(transferEthValue.toString())
+      fromWei(transferEthValue.toString())
     ).toFixed(5);
     if (
       "0x000000000000000000000000000000000000bEEF" ===
@@ -397,7 +394,7 @@ export class ThirdStep extends React.Component {
       approvePlusMultisendGas
     );
     const displayMultisendGasEthValue = parseFloat(
-      Web3Utils.fromWei(multisendGasEthValue.toString())
+      fromWei(multisendGasEthValue.toString())
     ).toFixed(5);
     if (
       "0x000000000000000000000000000000000000bEEF" ===
@@ -439,24 +436,22 @@ export class ThirdStep extends React.Component {
     const transferEthValue = new BN(gasPrice).times(
       new BN(this.state.transferGas)
     );
-    const displayTransferEthValue = Web3Utils.fromWei(
-      transferEthValue.toString()
-    );
+    const displayTransferEthValue = fromWei(transferEthValue.toString());
     // const approveGasEthValue = new BN(gasPrice).times(new BN(this.state.approveGas))
-    // const displayApproveGasEthValue = Web3Utils.fromWei(approveGasEthValue.toString())
+    // const displayApproveGasEthValue = fromWei(approveGasEthValue.toString())
     const approvePlusMultisendGas = new BN(multisendGas).plus(
       new BN(approveGas)
     );
     const multisendGasEthValue = new BN(gasPrice).times(
       approvePlusMultisendGas
     );
-    const displayMultisendGasEthValue = Web3Utils.fromWei(
+    const displayMultisendGasEthValue = fromWei(
       multisendGasEthValue.toString()
     );
     const savedGas = new BN(transferGas).minus(approvePlusMultisendGas);
     const savedGasEthValue = new BN(gasPrice).times(savedGas);
     const displaySavedGasEthValue = parseFloat(
-      Web3Utils.fromWei(savedGasEthValue.toString())
+      fromWei(savedGasEthValue.toString())
     ).toFixed(5);
     let sign = "";
     // if (approvePlusMultisendGas.gt(new BN(transferGas))) {

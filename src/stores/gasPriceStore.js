@@ -1,5 +1,5 @@
 import { action, observable, computed } from "mobx";
-import Web3Utils from "web3-utils";
+import { toHex, toWei } from "web3-utils";
 
 class GasPriceStore {
   // @observable gasPrices = {};
@@ -76,24 +76,18 @@ class GasPriceStore {
   }
 
   @computed get standardInHex() {
-    const toWei = Web3Utils.toWei(
-      this.selectedGasPrice.toFixed(9).toString(),
-      "gwei"
-    );
-    return Web3Utils.toHex(toWei);
+    const toWei = toWei(this.selectedGasPrice.toFixed(9).toString(), "gwei");
+    return toHex(toWei);
   }
   @computed get standardBaseInHex() {
-    const toWei = Web3Utils.toWei(
-      this.gasPriceBase.toFixed(9).toString(),
-      "gwei"
-    );
-    return Web3Utils.toHex(toWei);
+    const toWei = toWei(this.gasPriceBase.toFixed(9).toString(), "gwei");
+    return toHex(toWei);
   }
   @computed get fullGasPriceInHex() {
     const maxFeePerGas =
       parseFloat(this.selectedGasPrice) + parseFloat(this.gasPriceBase);
-    const toWei = Web3Utils.toWei(maxFeePerGas.toFixed(9).toString(), "gwei");
-    return Web3Utils.toHex(toWei);
+    const toWei = toWei(maxFeePerGas.toFixed(9).toString(), "gwei");
+    return toHex(toWei);
   }
   @action
   setSelectedGasPrice(value) {

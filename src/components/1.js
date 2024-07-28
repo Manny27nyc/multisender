@@ -1,5 +1,5 @@
 import React from "react";
-import Web3Utils from "web3-utils";
+import { isAddress } from "web3-validator";
 import Form from "react-validation/build/form";
 import Textarea from "react-validation/build/textarea";
 import Button from "react-validation/build/button";
@@ -28,11 +28,11 @@ const required = (value) => {
   }
 };
 
-const isAddress = (value) => {
-  if (!Web3Utils.isAddress(value)) {
-    return <span className="error">Token address is invalid</span>;
-  }
-};
+// const isAddress = (value) => {
+//   if (!Web3Utils.isAddress(value)) {
+//     return <span className="error">Token address is invalid</span>;
+//   }
+// };
 // const InvalidJSON = <div>Your JSON is invalid, please visit <a href="https://jsonlint.com/" target="_blank">Online Json Validator</a></div>
 
 // const isJson = (value) => {
@@ -103,7 +103,7 @@ export class FirstStep extends React.Component {
       return;
     }
     const address = e.value;
-    if (Web3Utils.isAddress(address)) {
+    if (isAddress(address)) {
       await this.tokenStore.setTokenAddress(address);
       this.setState({ tokenAddress: { label: e.label, value: e.value } });
     }

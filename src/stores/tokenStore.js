@@ -1,12 +1,11 @@
 import { action, observable, computed } from "mobx";
 import ERC20ABI from "../abis/ERC20ABI.json";
 // import StormMultiSenderABI from '../abis/StormMultisender.json'
-import Web3Utils from "web3-utils";
+import { fromWei, toWei, toChecksumAddress } from "web3-utils";
+import { isAddress } from "web3-validator";
 
 const BN = require("bignumber.js");
-function add(a, b) {
-  return new BN(a).plus(new BN(b));
-}
+
 class TokenStore {
   @observable decimals = "";
   @observable jsonAddresses = [];
@@ -52,7 +51,8 @@ class TokenStore {
     try {
       const web3 = this.web3Store.web3;
       const token = new web3.eth.Contract(ERC20ABI, address);
-      this.decimals = await token.methods.decimals().call();
+      const decimals = await token.methods.decimals().call();
+      this.decimals = decimals.asUintN();
       return this.decimals;
     } catch (e) {
       this.errors.push(
@@ -72,7 +72,7 @@ class TokenStore {
       const defAccTokenBalance = await token.methods
         .balanceOf(this.web3Store.defaultAccount)
         .call();
-      this.defAccTokenBalance = new BN(defAccTokenBalance)
+      this.defAccTokenBalance = new BN(defAccTokenBalance.toString())
         .div(this.multiplier)
         .toString(10);
       web3.eth.subscribe("newBlockHeaders", async (err, result) => {
@@ -83,7 +83,7 @@ class TokenStore {
         const defAccTokenBalance = await token.methods
           .balanceOf(this.web3Store.defaultAccount)
           .call();
-        this.defAccTokenBalance = new BN(defAccTokenBalance)
+        this.defAccTokenBalance = new BN(defAccTokenBalance.toString())
           .div(this.multiplier)
           .toString(10);
       });
@@ -102,8 +102,8 @@ class TokenStore {
     try {
       const web3 = this.web3Store.web3;
       let ethBalance = await web3.eth.getBalance(this.web3Store.defaultAccount);
-      ethBalance = Web3Utils.fromWei(ethBalance);
-      this.ethBalance = new BN(ethBalance).toFormat(3);
+      ethBalance = fromWei(ethBalance);
+      this.ethBalance = new BN(ethBalance.toString()).toFormat(3);
       web3.eth.subscribe("newBlockHeaders", async (err, result) => {
         if (err) {
           console.log(err);
@@ -112,8 +112,8 @@ class TokenStore {
         let ethBalance = await web3.eth.getBalance(
           this.web3Store.defaultAccount
         );
-        ethBalance = Web3Utils.fromWei(ethBalance);
-        this.ethBalance = new BN(ethBalance).toFormat(3);
+        ethBalance = fromWei(ethBalance);
+        this.ethBalance = new BN(ethBalance.toString()).toFormat(3);
       });
       return this.ethBalance;
     } catch (e) {
@@ -150,7 +150,9 @@ class TokenStore {
           await this.proxyMultiSenderAddress()
         )
         .call();
-      this.allowance = new BN(allowance).div(this.multiplier).toString(10);
+      this.allowance = new BN(allowance.toString())
+        .div(this.multiplier)
+        .toString(10);
       web3.eth.subscribe("newBlockHeaders", async (err, result) => {
         if (err) {
           console.log(err);
@@ -162,7 +164,9 @@ class TokenStore {
             await this.proxyMultiSenderAddress()
           )
           .call();
-        this.allowance = new BN(allowance).div(this.multiplier).toString(10);
+        this.allowance = new BN(allowance.toString())
+          .div(this.multiplier)
+          .toString(10);
       });
       return this.allowance;
     } catch (e) {
@@ -176,14 +180,14 @@ class TokenStore {
   @action
   async getCurrentFee() {
     // const currentFee = "100000000000000"; // 0.0001 ETH
-    // this.currentFee = Web3Utils.fromWei(currentFee)
+    // this.currentFee = fromWei(currentFee)
     return this.currentFee;
     // try {
     //   this.web3Store.getWeb3Promise().then(async () => {
     //     const web3 = this.web3Store.web3;
     //     const multisender = new web3.eth.Contract(StormMultiSenderABI, await this.proxyMultiSenderAddress());
     //     const currentFee = await multisender.methods.currentFee(this.web3Store.defaultAccount).call();
-    //     this.currentFee = Web3Utils.fromWei(currentFee)
+    //     this.currentFee = fromWei(currentFee).toString()
     //     return this.currentFee
     //   })
     // }
@@ -193,7 +197,7 @@ class TokenStore {
   }
 
   setCurrentFee(currentFee) {
-    this.currentFee = Web3Utils.fromWei(currentFee);
+    this.currentFee = fromWei(currentFee).toString();
   }
 
   async getArrayLimit() {
@@ -224,7 +228,7 @@ class TokenStore {
     this.allowance = "";
     this.tokenSymbol = "";
     if (
-      Web3Utils.isAddress(this.web3Store.defaultAccount) &&
+      isAddress(this.web3Store.defaultAccount) &&
       tokenAddress !== "0x000000000000000000000000000000000000bEEF"
     ) {
       this.tokenAddress = tokenAddress;
@@ -289,8 +293,8 @@ class TokenStore {
         let address = Object.keys(account)[0]
           .replace(/\s/g, "")
           .replace("0X", "0x");
-        address = Web3Utils.toChecksumAddress(address);
-        if (!Web3Utils.isAddress(address)) {
+        address = toChecksumAddress(address);
+        if (!isAddress(address)) {
           console.log("Invalid address", address);
           this.invalid_addresses.push(address);
           return;
@@ -359,13 +363,13 @@ class TokenStore {
   }
 
   // @computed get totalCostInEth(){
-  //   const standardGasPrice = Web3Utils.toWei(this.gasPriceStore.selectedGasPrice.toString(), 'gwei');
-  //   const currentFeeInWei = Web3Utils.toWei(this.currentFee);
+  //   const standardGasPrice = toWei(this.gasPriceStore.selectedGasPrice.toString(), 'gwei');
+  //   const currentFeeInWei = toWei(this.currentFee);
   //   const tx = new BN(standardGasPrice).times(new BN('5000000'))
   //   const txFeeMiners = tx.times(new BN(this.totalNumberTx))
   //   const contractFee = new BN(currentFeeInWei).times(this.totalNumberTx);
   //
-  //   return Web3Utils.fromWei(txFeeMiners.plus(contractFee).toString(10))
+  //   return fromWei(txFeeMiners.plus(contractFee).toString(10))
   // }
 }
 

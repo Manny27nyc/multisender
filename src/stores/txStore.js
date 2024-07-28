@@ -1,9 +1,7 @@
 import { action, observable, computed, autorun, toJS } from "mobx";
-import Web3Utils from "web3-utils";
+import { fromWei, toHex, toWei } from "web3-utils";
 import ERC20ABI from "../abis/ERC20ABI.json";
 import MultiSenderAbi from "../abis/StormMultisender.json";
-import Web3 from "web3";
-import { observer } from "mobx-react";
 import swal from "sweetalert";
 const BN = require("bignumber.js");
 
@@ -153,7 +151,11 @@ class TxStore {
           };
         })
         .once("receipt", async (receipt) => {
-          await this.getTxStatus(receipt.transactionHash);
+          try {
+            await this.getTxStatus(receipt.transactionHash);
+          } catch (e) {
+            console.error(e);
+          }
         })
         .on("error", (error) => {
           swal("Error!", error.message, "error");
@@ -173,39 +175,42 @@ class TxStore {
         this.tokenStore.totalBalanceWithDecimals
       )
       .encodeABI({ from: this.web3Store.defaultAccount });
-    return web3.eth.estimateGas({
+    const gas = await web3.eth.estimateGas({
       from: this.web3Store.defaultAccount,
       data: encodedData,
       to: this.tokenStore.tokenAddress,
       gas: this.web3Store.maxBlockGas,
     });
+    return gas.asUintN();
   }
 
   async _getTransferGas(to, value) {
     const web3 = this.web3Store.web3;
     const { tokenAddress } = this.tokenStore;
     if (tokenAddress === "0x000000000000000000000000000000000000bEEF") {
-      return web3.eth.estimateGas({
+      const gas = await web3.eth.estimateGas({
         from: this.web3Store.defaultAccount,
         // data: null,
         value: value,
         to: to,
         gas: this.web3Store.maxBlockGas,
       });
+      return gas.asUintN();
     } else {
-      const token = new web3.eth.Contract(
-        ERC20ABI,
-        this.tokenStore.tokenAddress
-      );
+      // const { currentFee } = this.tokenStore;
+      const token = new web3.eth.Contract(ERC20ABI, tokenAddress);
       const encodedData = await token.methods
         .transfer(to, value)
         .encodeABI({ from: this.web3Store.defaultAccount });
-      return await web3.eth.estimateGas({
+      const gas = await web3.eth.estimateGas({
         from: this.web3Store.defaultAccount,
         data: encodedData,
-        to: this.tokenStore.tokenAddress,
+        // this function is for simple transfer without multisend. no fee is applied
+        // value: currentFee,
+        to: tokenAddress,
         gas: this.web3Store.maxBlockGas,
       });
+      return gas.asUintN();
     }
   }
 
@@ -282,7 +287,7 @@ class TxStore {
     }, new BN("0"));
 
     if (token_address === "0x000000000000000000000000000000000000bEEF") {
-      const totalInEth = Web3Utils.fromWei(totalInWei.toString());
+      const totalInEth = fromWei(totalInWei.toString());
       return new BN(currentFee).plus(totalInEth);
     }
     return new BN(currentFee);
@@ -333,13 +338,13 @@ class TxStore {
     const txObj = {
       from: this.web3Store.defaultAccount,
       data: encodedData,
-      value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      value: toHex(toWei(ethValue.toString())),
       to: await this.tokenStore.proxyMultiSenderAddress(),
       gas: this.web3Store.maxBlockGas,
     };
     console.log("estimateGas txObj=", txObj);
     const gas = await web3.eth.estimateGas(txObj);
-    totalGas += gas;
+    totalGas += gas.asUintN();
 
     // if (token_address === "0x000000000000000000000000000000000000bEEF") {
     //   let encodedData = null;
@@ -357,7 +362,7 @@ class TxStore {
     //   const txObj = {
     //     from: this.web3Store.defaultAccount,
     //     data: encodedData,
-    //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+    //     value: toHex(toWei(ethValue.toString())),
     //     to: await this.tokenStore.proxyMultiSenderAddress(),
     //     gas: this.web3Store.maxBlockGas,
     //   };
@@ -387,7 +392,7 @@ class TxStore {
     //   const txObj = {
     //     from: this.web3Store.defaultAccount,
     //     data: encodedData,
-    //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+    //     value: toHex(toWei(ethValue.toString())),
     //     to: await this.tokenStore.proxyMultiSenderAddress(),
     //     gas: this.web3Store.maxBlockGas,
     //   };
@@ -428,7 +433,7 @@ class TxStore {
     // const balances_to_send_sum = totalInWei.toString(10);
     let ethValue = getEthValue(token_address, balances_to_send, currentFee);
     // if (token_address === "0x000000000000000000000000000000000000bEEF") {
-    //   const totalInEth = Web3Utils.fromWei(totalInWei.toString());
+    //   const totalInEth = fromWei(totalInWei.toString());
     //   ethValue = new BN(currentFee).plus(totalInEth);
     // } else {
     //   ethValue = new BN(currentFee);
@@ -460,17 +465,17 @@ class TxStore {
       const txObj = {
         from: this.web3Store.defaultAccount,
         data: encodedData,
-        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+        value: toHex(toWei(ethValue.toString())),
         to: await this.tokenStore.proxyMultiSenderAddress(),
         gas: this.web3Store.maxBlockGas,
       };
       console.log("txObj", txObj);
       let gas = await web3.eth.estimateGas(txObj);
-      console.log("gas", gas);
+      console.log("gas", gas.asUintN());
       let optionsObj = {
         from: this.web3Store.defaultAccount,
-        gas: Web3Utils.toHex(gas),
-        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+        gas: toHex(gas.asUintN()),
+        value: toHex(toWei(ethValue.toString())),
       };
       if (this.web3Store.isEIP1559) {
         optionsObj = {
@@ -528,15 +533,15 @@ class TxStore {
       //   let gas = await web3.eth.estimateGas({
       //     from: this.web3Store.defaultAccount,
       //     data: encodedData,
-      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //     value: toHex(toWei(ethValue.toString())),
       //     to: await this.tokenStore.proxyMultiSenderAddress(),
       //     gas: this.web3Store.maxBlockGas,
       //   });
       //   console.log("gas", gas);
       //   let optionsObj = {
       //     from: this.web3Store.defaultAccount,
-      //     gas: Web3Utils.toHex(gas),
-      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //     gas: toHex(gas),
+      //     value: toHex(toWei(ethValue.toString())),
       //   };
       //   if (this.web3Store.isEIP1559) {
       //     optionsObj = {
@@ -614,7 +619,7 @@ class TxStore {
       //   const txObj = {
       //     from: this.web3Store.defaultAccount,
       //     data: encodedData,
-      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //     value: toHex(toWei(ethValue.toString())),
       //     to: await this.tokenStore.proxyMultiSenderAddress(),
       //     gas: this.web3Store.maxBlockGas,
       //   };
@@ -623,8 +628,8 @@ class TxStore {
       //   console.log("gas", gas);
       //   let optionsObj = {
       //     from: this.web3Store.defaultAccount,
-      //     gas: Web3Utils.toHex(gas),
-      //     value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+      //     gas: toHex(gas),
+      //     value: toHex(toWei(ethValue.toString())),
       //   };
       //   if (this.web3Store.isEIP1559) {
       //     optionsObj = {
@@ -717,9 +722,9 @@ class TxStore {
     const txInfo = await web3.eth.getTransaction(hash);
     const receipt = await web3.eth.getTransactionReceipt(hash);
     if (receipt.hasOwnProperty("status")) {
-      if (receipt.status === "0x1") {
+      if (receipt.status.asUintN() === 1) {
         this.txs[index].status = `mined`;
-      } else if (receipt.status === "0x0") {
+      } else if (receipt.status.asUintN() === 0) {
         // if (receipt.gasUsed > txInfo.gas) {
         this.txs[index].status = `error`;
         this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
@@ -730,7 +735,7 @@ class TxStore {
         // }
       } else {
         // unknown status. pre-Byzantium
-        if (receipt.gasUsed >= txInfo.gas) {
+        if (receipt.gasUsed.asUintN() >= txInfo.gas.asUintN()) {
           this.txs[index].status = `error`;
           this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
         } else {
@@ -739,7 +744,7 @@ class TxStore {
       }
     } else {
       // unknown status. pre-Byzantium
-      if (receipt.gasUsed >= txInfo.gas) {
+      if (receipt.gasUsed.asUintN() >= txInfo.gas.asUintN()) {
         this.txs[index].status = `error`;
         this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
       } else {
@@ -755,7 +760,7 @@ class TxStore {
     }
     const web3 = this.web3Store.web3;
     const receipt = await web3.eth.getTransactionReceipt(this.approval);
-    return receipt.gasUsed;
+    return receipt.gasUsed.asUintN();
   }
 }
 
