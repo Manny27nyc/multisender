@@ -253,7 +253,7 @@ export let ThirdStep = inject("UiStore")(
           const ethBalanceWei = toWei(this.tokenStore.ethBalance, "ether");
           if (multisendGasEthValue.gt(new BN(ethBalanceWei))) {
             const displayMultisendGasEthValue = parseFloat(
-              fromWei(multisendGasEthValue.toString())
+              fromWei(multisendGasEthValue.toString(), "wei")
             ).toFixed(5);
             console.error("please fund you account in ");
             swal({
@@ -346,7 +346,7 @@ export let ThirdStep = inject("UiStore")(
           new BN(this.state.transferGas)
         );
         const displayTransferEthValue = parseFloat(
-          fromWei(transferEthValue.toString())
+          fromWei(transferEthValue.toString(), "wei")
         ).toFixed(5);
         if (
           "0x000000000000000000000000000000000000bEEF" ===
@@ -408,7 +408,8 @@ export let ThirdStep = inject("UiStore")(
           approvePlusMultisendGas
         );
         const displayMultisendGasEthValue = parseFloat(
-          fromWei(multisendGasEthValue.toString())
+          fromWei(multisendGasEthValue.toString(), "wei"),
+          "wei"
         ).toFixed(5);
         if (
           "0x000000000000000000000000000000000000bEEF" ===
@@ -452,22 +453,26 @@ export let ThirdStep = inject("UiStore")(
         const transferEthValue = new BN(gasPrice).times(
           new BN(this.state.transferGas)
         );
-        const displayTransferEthValue = fromWei(transferEthValue.toString());
+        // const displayTransferEthValue = fromWei(
+        //   transferEthValue.toString(),
+        //   "wei"
+        // );
         // const approveGasEthValue = new BN(gasPrice).times(new BN(this.state.approveGas))
-        // const displayApproveGasEthValue = fromWei(approveGasEthValue.toString())
+        // const displayApproveGasEthValue = fromWei(approveGasEthValue.toString(), "wei")
         const approvePlusMultisendGas = new BN(multisendGas).plus(
           new BN(approveGas)
         );
         const multisendGasEthValue = new BN(gasPrice).times(
           approvePlusMultisendGas
         );
-        const displayMultisendGasEthValue = fromWei(
-          multisendGasEthValue.toString()
-        );
+        // const displayMultisendGasEthValue = fromWei(
+        //   multisendGasEthValue.toString(),
+        //   "wei"
+        // );
         const savedGas = new BN(transferGas).minus(approvePlusMultisendGas);
         const savedGasEthValue = new BN(gasPrice).times(savedGas);
         const displaySavedGasEthValue = parseFloat(
-          fromWei(savedGasEthValue.toString())
+          fromWei(savedGasEthValue.toString(), "wei")
         ).toFixed(5);
         let sign = "";
         // if (approvePlusMultisendGas.gt(new BN(transferGas))) {

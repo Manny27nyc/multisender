@@ -77,18 +77,18 @@ class GasPriceStore {
   }
 
   get standardInHex() {
-    const toWei = toWei(this.selectedGasPrice.toFixed(9).toString(), "gwei");
-    return toHex(toWei);
+    const v = toWei(this.selectedGasPrice.toFixed(9).toString(), "gwei");
+    return toHex(v);
   }
   get standardBaseInHex() {
-    const toWei = toWei(this.gasPriceBase.toFixed(9).toString(), "gwei");
-    return toHex(toWei);
+    const v = toWei(this.gasPriceBase.toFixed(9).toString(), "gwei");
+    return toHex(v);
   }
   get fullGasPriceInHex() {
     const maxFeePerGas =
       parseFloat(this.selectedGasPrice) + parseFloat(this.gasPriceBase);
-    const toWei = toWei(maxFeePerGas.toFixed(9).toString(), "gwei");
-    return toHex(toWei);
+    const v = toWei(maxFeePerGas.toFixed(9).toString(), "gwei");
+    return toHex(v);
   }
 
   setSelectedGasPrice(value) {

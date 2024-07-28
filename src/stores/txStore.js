@@ -286,7 +286,7 @@ class TxStore {
     }, new BN("0"));
 
     if (token_address === "0x000000000000000000000000000000000000bEEF") {
-      const totalInEth = fromWei(totalInWei.toString());
+      const totalInEth = fromWei(totalInWei.toString(), "wei");
       return new BN(currentFee).plus(totalInEth);
     }
     return new BN(currentFee);
@@ -337,7 +337,7 @@ class TxStore {
     const txObj = {
       from: this.web3Store.defaultAccount,
       data: encodedData,
-      value: toHex(toWei(ethValue.toString())),
+      value: toHex(toWei(ethValue.toString(), "wei")),
       to: await this.tokenStore.proxyMultiSenderAddress(),
       gas: this.web3Store.maxBlockGas,
     };
@@ -361,7 +361,7 @@ class TxStore {
     //   const txObj = {
     //     from: this.web3Store.defaultAccount,
     //     data: encodedData,
-    //     value: toHex(toWei(ethValue.toString())),
+    //     value: toHex(toWei(ethValue.toString(), "wei")),
     //     to: await this.tokenStore.proxyMultiSenderAddress(),
     //     gas: this.web3Store.maxBlockGas,
     //   };
@@ -391,7 +391,7 @@ class TxStore {
     //   const txObj = {
     //     from: this.web3Store.defaultAccount,
     //     data: encodedData,
-    //     value: toHex(toWei(ethValue.toString())),
+    //     value: toHex(toWei(ethValue.toString(), "wei")),
     //     to: await this.tokenStore.proxyMultiSenderAddress(),
     //     gas: this.web3Store.maxBlockGas,
     //   };
@@ -432,7 +432,7 @@ class TxStore {
     // const balances_to_send_sum = totalInWei.toString(10);
     let ethValue = getEthValue(token_address, balances_to_send, currentFee);
     // if (token_address === "0x000000000000000000000000000000000000bEEF") {
-    //   const totalInEth = fromWei(totalInWei.toString());
+    //   const totalInEth = fromWei(totalInWei.toString(), "wei");
     //   ethValue = new BN(currentFee).plus(totalInEth);
     // } else {
     //   ethValue = new BN(currentFee);
@@ -464,7 +464,7 @@ class TxStore {
       const txObj = {
         from: this.web3Store.defaultAccount,
         data: encodedData,
-        value: toHex(toWei(ethValue.toString())),
+        value: toHex(toWei(ethValue.toString(), "wei")),
         to: await this.tokenStore.proxyMultiSenderAddress(),
         gas: this.web3Store.maxBlockGas,
       };
@@ -474,7 +474,7 @@ class TxStore {
       let optionsObj = {
         from: this.web3Store.defaultAccount,
         gas: toHex(BigInt.asUintN(64, gas)),
-        value: toHex(toWei(ethValue.toString())),
+        value: toHex(toWei(ethValue.toString(), "wei")),
       };
       if (this.web3Store.isEIP1559) {
         optionsObj = {
@@ -532,7 +532,7 @@ class TxStore {
       //   let gas = await web3.eth.estimateGas({
       //     from: this.web3Store.defaultAccount,
       //     data: encodedData,
-      //     value: toHex(toWei(ethValue.toString())),
+      //     value: toHex(toWei(ethValue.toString(), "wei")),
       //     to: await this.tokenStore.proxyMultiSenderAddress(),
       //     gas: this.web3Store.maxBlockGas,
       //   });
@@ -540,7 +540,7 @@ class TxStore {
       //   let optionsObj = {
       //     from: this.web3Store.defaultAccount,
       //     gas: toHex(gas),
-      //     value: toHex(toWei(ethValue.toString())),
+      //     value: toHex(toWei(ethValue.toString(), "wei")),
       //   };
       //   if (this.web3Store.isEIP1559) {
       //     optionsObj = {
@@ -618,7 +618,7 @@ class TxStore {
       //   const txObj = {
       //     from: this.web3Store.defaultAccount,
       //     data: encodedData,
-      //     value: toHex(toWei(ethValue.toString())),
+      //     value: toHex(toWei(ethValue.toString(), "wei")),
       //     to: await this.tokenStore.proxyMultiSenderAddress(),
       //     gas: this.web3Store.maxBlockGas,
       //   };
@@ -628,7 +628,7 @@ class TxStore {
       //   let optionsObj = {
       //     from: this.web3Store.defaultAccount,
       //     gas: toHex(gas),
-      //     value: toHex(toWei(ethValue.toString())),
+      //     value: toHex(toWei(ethValue.toString(), "wei")),
       //   };
       //   if (this.web3Store.isEIP1559) {
       //     optionsObj = {

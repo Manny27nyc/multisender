@@ -33,7 +33,7 @@ let getWeb3 = () => {
         // Checking if ethereum has been injected by the browser (Mist/MetaMask)
         if (window.hasOwnProperty("ethereum")) {
           // Use Mist/MetaMask's provider.
-          let web3 = new Web3(Web3.givenProvider);
+          let web3 = new Web3(window.ethereum);
           web3.eth.net
             .getId()
             .then((netId) => {
