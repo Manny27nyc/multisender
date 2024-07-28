@@ -1,4 +1,4 @@
-import { action, observable, computed } from "mobx";
+import { action, observable, computed, decorate } from "mobx";
 import ERC20ABI from "../abis/ERC20ABI.json";
 // import StormMultiSenderABI from '../abis/StormMultisender.json'
 import { fromWei, toWei, toChecksumAddress } from "web3-utils";
@@ -7,23 +7,23 @@ import { isAddress } from "web3-validator";
 const BN = require("bignumber.js");
 
 class TokenStore {
-  @observable decimals = "";
-  @observable jsonAddresses = [];
-  @observable tokenAddress = "";
-  @observable defAccTokenBalance = "";
-  @observable allowance = "";
+  decimals = "";
+  jsonAddresses = [];
+  tokenAddress = "";
+  defAccTokenBalance = "";
+  allowance = "";
   // set non-zero reasonable value to ensure correct gas calculation
-  @observable currentFee = "10000000000000";
-  @observable tokenSymbol = "";
-  @observable ethBalance = "";
-  @observable balances_to_send = [];
-  @observable addresses_to_send = [];
-  @observable invalid_addresses = [];
-  @observable filteredAddresses = [];
-  @observable totalBalance = "0";
-  @observable arrayLimit = 0;
-  @observable errors = [];
-  @observable dublicates = [];
+  currentFee = "10000000000000";
+  tokenSymbol = "";
+  ethBalance = "";
+  balances_to_send = [];
+  addresses_to_send = [];
+  invalid_addresses = [];
+  filteredAddresses = [];
+  totalBalance = "0";
+  arrayLimit = 0;
+  errors = [];
+  dublicates = [];
 
   constructor(rootStore) {
     this.web3Store = rootStore.web3Store;
@@ -43,7 +43,6 @@ class TokenStore {
     return "";
   }
 
-  @action
   async getDecimals(address) {
     if ("" !== this.decimals) {
       return this.decimals;
@@ -136,7 +135,7 @@ class TokenStore {
       console.error(e);
     }
   }
-  @action
+
   async getAllowance() {
     if ("" !== this.allowance) {
       return this.allowance;
@@ -177,7 +176,6 @@ class TokenStore {
     }
   }
 
-  @action
   async getCurrentFee() {
     // const currentFee = "100000000000000"; // 0.0001 ETH
     // this.currentFee = fromWei(currentFee)
@@ -217,7 +215,6 @@ class TokenStore {
     // }
   }
 
-  @action
   async setTokenAddress(tokenAddress) {
     await this.web3Store.getWeb3Promise();
     await this.getCurrentFee();
@@ -244,17 +241,14 @@ class TokenStore {
     }
   }
 
-  @action
   setDecimals(decimals) {
     this.decimals = decimals;
   }
 
-  @action
   setJsonAddresses(addresses) {
     this.jsonAddresses = addresses;
   }
 
-  @action
   async reset() {
     this.decimals = "";
     this.jsonAddresses = [];
@@ -274,7 +268,6 @@ class TokenStore {
     this.dublicates = [];
   }
 
-  @action
   async parseAddresses() {
     this.addresses_to_send = [];
     this.dublicates = [];
@@ -342,19 +335,19 @@ class TokenStore {
     return this.jsonAddresses;
   }
 
-  @computed get totalBalanceWithDecimals() {
+  get totalBalanceWithDecimals() {
     return new BN(this.totalBalance).times(this.multiplier).toString(10);
   }
-  @computed get multiplier() {
+  get multiplier() {
     const decimals = Number(this.decimals);
     return new BN(10).pow(decimals);
   }
 
-  @computed get totalNumberTx() {
+  get totalNumberTx() {
     return Math.ceil(this.jsonAddresses.length / this.arrayLimit);
   }
 
-  @computed get addressesData() {
+  get addressesData() {
     return this.jsonAddresses.map((account) => {
       const address = Object.keys(account)[0].replace(/\s/g, "");
       const balance = Object.values(account)[0];
@@ -362,7 +355,7 @@ class TokenStore {
     });
   }
 
-  // @computed get totalCostInEth(){
+  // get totalCostInEth(){
   //   const standardGasPrice = toWei(this.gasPriceStore.selectedGasPrice.toString(), 'gwei');
   //   const currentFeeInWei = toWei(this.currentFee);
   //   const tx = new BN(standardGasPrice).times(new BN('5000000'))
@@ -372,5 +365,45 @@ class TokenStore {
   //   return fromWei(txFeeMiners.plus(contractFee).toString(10))
   // }
 }
+
+decorate(TokenStore, {
+  decimals: observable,
+  jsonAddresses: observable,
+  tokenAddress: observable,
+  defAccTokenBalance: observable,
+  allowance: observable,
+  currentFee: observable,
+  tokenSymbol: observable,
+  ethBalance: observable,
+  balances_to_send: observable,
+  addresses_to_send: observable,
+  invalid_addresses: observable,
+  filteredAddresses: observable,
+  totalBalance: observable,
+  arrayLimit: observable,
+  errors: observable,
+  dublicates: observable,
+
+  loading: observable,
+  gasPricesArray: observable,
+  selectedGasPrice: observable,
+  gasPriceBase: observable,
+  selectedGasShare: observable,
+
+  getDecimals: action,
+  getAllowance: action,
+  getCurrentFee: action,
+  setTokenAddress: action,
+  setDecimals: action,
+  setJsonAddresses: action,
+  reset: action,
+  parseAddresses: action,
+
+  totalBalanceWithDecimals: computed,
+  multiplier: computed,
+  totalNumberTx: computed,
+  addressesData: computed,
+  // totalCostInEth: computed,
+});
 
 export default TokenStore;

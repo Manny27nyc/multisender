@@ -1,4 +1,4 @@
-import { action, observable, computed, autorun, toJS } from "mobx";
+import { action, observable, computed, autorun, toJS, decorate } from "mobx";
 import { fromWei, toHex, toWei } from "web3-utils";
 import ERC20ABI from "../abis/ERC20ABI.json";
 import MultiSenderAbi from "../abis/StormMultisender.json";
@@ -6,9 +6,11 @@ import swal from "sweetalert";
 const BN = require("bignumber.js");
 
 class TxStore {
-  @observable txs = [];
+  txs = [];
+  approval = "";
+
   txHashToIndex = {};
-  @observable approval = "";
+
   constructor(rootStore) {
     this.tokenStore = rootStore.tokenStore;
     this.web3Store = rootStore.web3Store;
@@ -16,7 +18,6 @@ class TxStore {
     this.interval = null;
   }
 
-  @action
   async reset() {
     this.txs = [];
     this.txHashToIndex = {};
@@ -25,7 +26,6 @@ class TxStore {
     clearInterval(this.interval);
   }
 
-  @action
   async doSend() {
     this.keepRunning = true;
     this.txs = [];
@@ -77,7 +77,6 @@ class TxStore {
     }
   }
 
-  @action
   async doApprove() {
     this.keepRunning = true;
     this.txs = [];
@@ -763,5 +762,14 @@ class TxStore {
     return receipt.gasUsed.asUintN();
   }
 }
+
+decorate(TxStore, {
+  txs: observable,
+  approval: observable,
+
+  reset: action,
+  doSend: action,
+  doApprove: action,
+});
 
 export default TxStore;

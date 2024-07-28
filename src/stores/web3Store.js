@@ -1,34 +1,35 @@
-import { action, observable } from "mobx";
+import { action, observable, decorate } from "mobx";
 import getWeb3 from "../getWeb3";
 import { sprintf } from "sprintf-js";
 
 class Web3Store {
-  @observable web3 = {};
-  @observable defaultAccount = "";
-  @observable currencyTicker = "";
-  @observable currencyTickerName = "";
-  @observable blockchainName = "";
-  @observable maxBlockGas = 8000000;
-  @observable isEIP1559 = false;
-  @observable loading = true;
-  @observable errors = [];
-  @observable userTokens = [];
-  @observable explorerUrl = "";
-  @observable explorerAPIUrl = "";
-  @observable gasPriceAPIUrl = "";
-  @observable startedUrl = window.location.hash;
+  web3 = {};
+  defaultAccount = "";
+  currencyTicker = "";
+  currencyTickerName = "";
+  blockchainName = "";
+  maxBlockGas = 8000000;
+  isEIP1559 = false;
+  loading = true;
+  errors = [];
+  userTokens = [];
+  explorerUrl = "";
+  explorerAPIUrl = "";
+  gasPriceAPIUrl = "";
+  startedUrl = window.location.hash;
+
   constructor(rootStore) {
     this.userTokensInitialized = false;
   }
-  @action
+
   setExplorerUrl(url) {
     this.explorerUrl = url;
   }
-  @action
+
   setExplorerAPIUrl(url) {
     this.explorerAPIUrl = url;
   }
-  @action
+
   setStartedUrl(url) {
     this.startedUrl = url;
   }
@@ -167,5 +168,25 @@ class Web3Store {
     });
   }
 }
+
+decorate(Web3Store, {
+  web3: observable,
+  defaultAccount: observable,
+  currencyTicker: observable,
+  currencyTickerName: observable,
+  blockchainName: observable,
+  maxBlockGas: observable,
+  isEIP1559: observable,
+  loading: observable,
+  errors: observable,
+  userTokens: observable,
+  explorerUrl: observable,
+  explorerAPIUrl: observable,
+  gasPriceAPIUrl: observable,
+  startedUrl: observable,
+  setExplorerUrl: action,
+  setExplorerAPIUrl: action,
+  setStartedUrl: action,
+});
 
 export default Web3Store;

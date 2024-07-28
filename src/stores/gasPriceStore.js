@@ -1,18 +1,19 @@
-import { action, observable, computed } from "mobx";
+import { action, observable, computed, decorate } from "mobx";
 import { toHex, toWei } from "web3-utils";
 
 class GasPriceStore {
-  // @observable gasPrices = {};
-  @observable loading = true;
-  @observable gasPricesArray = [
+  // gasPrices = {};
+  loading = true;
+  gasPricesArray = [
     { label: "fast", labelETH: "FastGasPrice", value: "21" },
     { label: "standard", labelETH: "ProposeGasPrice", value: "21" },
     { label: "slow", labelETH: "SafeGasPrice", value: "21" },
     { label: "instant", labelETH: "FastGasPrice", value: "21" },
   ];
-  @observable selectedGasPrice = 22;
-  @observable gasPriceBase = "0";
-  @observable selectedGasShare = "50";
+  selectedGasPrice = 22;
+  gasPriceBase = "0";
+  selectedGasShare = "50";
+
   gasPricePromise = null;
   constructor(rootStore) {
     this.web3Store = rootStore.web3Store;
@@ -75,29 +76,43 @@ class GasPriceStore {
       });
   }
 
-  @computed get standardInHex() {
+  get standardInHex() {
     const toWei = toWei(this.selectedGasPrice.toFixed(9).toString(), "gwei");
     return toHex(toWei);
   }
-  @computed get standardBaseInHex() {
+  get standardBaseInHex() {
     const toWei = toWei(this.gasPriceBase.toFixed(9).toString(), "gwei");
     return toHex(toWei);
   }
-  @computed get fullGasPriceInHex() {
+  get fullGasPriceInHex() {
     const maxFeePerGas =
       parseFloat(this.selectedGasPrice) + parseFloat(this.gasPriceBase);
     const toWei = toWei(maxFeePerGas.toFixed(9).toString(), "gwei");
     return toHex(toWei);
   }
-  @action
+
   setSelectedGasPrice(value) {
     this.selectedGasPrice = parseFloat(value);
   }
 
-  @action
   setSelectedGasShare(value) {
     this.selectedGasShare = value;
   }
 }
+
+decorate(GasPriceStore, {
+  loading: observable,
+  gasPricesArray: observable,
+  selectedGasPrice: observable,
+  gasPriceBase: observable,
+  selectedGasShare: observable,
+
+  setSelectedGasPrice: action,
+  setSelectedGasShare: action,
+
+  standardInHex: computed,
+  standardBaseInHex: computed,
+  fullGasPriceInHex: computed,
+});
 
 export default GasPriceStore;
