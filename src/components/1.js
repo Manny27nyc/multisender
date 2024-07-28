@@ -306,7 +306,6 @@ export class FirstStep extends React.Component {
                 placeholder={`Example: ${this.state.placeholder}`}
                 value={this.state.csv}
                 onBlur={this.onParse}
-                id="addresses-with-balances"
                 className="multisend-textarea"
               ></Textarea>
             </div>
