@@ -45,8 +45,8 @@ let getWeb3 = () => {
                 currencyTicker,
                 currencyTickerName,
                 blockchainName;
+              netId = netId.toString();
               console.log("netId", netId);
-              netId = "" + netId;
               switch (netId) {
                 case "1":
                   netIdName = "Mainnet";

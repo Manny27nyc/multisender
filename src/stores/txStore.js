@@ -180,7 +180,7 @@ class TxStore {
       to: this.tokenStore.tokenAddress,
       gas: this.web3Store.maxBlockGas,
     });
-    return gas.asUintN();
+    return BigInt.asUintN(64, gas);
   }
 
   async _getTransferGas(to, value) {
@@ -194,7 +194,7 @@ class TxStore {
         to: to,
         gas: this.web3Store.maxBlockGas,
       });
-      return gas.asUintN();
+      return BigInt.asUintN(64, gas);
     } else {
       // const { currentFee } = this.tokenStore;
       const token = new web3.eth.Contract(ERC20ABI, tokenAddress);
@@ -209,7 +209,7 @@ class TxStore {
         to: tokenAddress,
         gas: this.web3Store.maxBlockGas,
       });
-      return gas.asUintN();
+      return BigInt.asUintN(64, gas);
     }
   }
 
@@ -343,7 +343,7 @@ class TxStore {
     };
     console.log("estimateGas txObj=", txObj);
     const gas = await web3.eth.estimateGas(txObj);
-    totalGas += gas.asUintN();
+    totalGas += BigInt.asUintN(64, gas);
 
     // if (token_address === "0x000000000000000000000000000000000000bEEF") {
     //   let encodedData = null;
@@ -470,10 +470,10 @@ class TxStore {
       };
       console.log("txObj", txObj);
       let gas = await web3.eth.estimateGas(txObj);
-      console.log("gas", gas.asUintN());
+      console.log("gas", BigInt.asUintN(64, gas));
       let optionsObj = {
         from: this.web3Store.defaultAccount,
-        gas: toHex(gas.asUintN()),
+        gas: toHex(BigInt.asUintN(64, gas)),
         value: toHex(toWei(ethValue.toString())),
       };
       if (this.web3Store.isEIP1559) {
@@ -721,9 +721,10 @@ class TxStore {
     const txInfo = await web3.eth.getTransaction(hash);
     const receipt = await web3.eth.getTransactionReceipt(hash);
     if (receipt.hasOwnProperty("status")) {
-      if (receipt.status.asUintN() === 1) {
+      const status = BigInt.asUintN(64, receipt.status);
+      if (status === 1) {
         this.txs[index].status = `mined`;
-      } else if (receipt.status.asUintN() === 0) {
+      } else if (status === 0) {
         // if (receipt.gasUsed > txInfo.gas) {
         this.txs[index].status = `error`;
         this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
@@ -734,7 +735,9 @@ class TxStore {
         // }
       } else {
         // unknown status. pre-Byzantium
-        if (receipt.gasUsed.asUintN() >= txInfo.gas.asUintN()) {
+        if (
+          BigInt.asUintN(64, receipt.gasUsed) >= BigInt.asUintN(64, txInfo.gas)
+        ) {
           this.txs[index].status = `error`;
           this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
         } else {
@@ -743,7 +746,9 @@ class TxStore {
       }
     } else {
       // unknown status. pre-Byzantium
-      if (receipt.gasUsed.asUintN() >= txInfo.gas.asUintN()) {
+      if (
+        BigInt.asUintN(64, receipt.gasUsed) >= BigInt.asUintN(64, txInfo.gas)
+      ) {
         this.txs[index].status = `error`;
         this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
       } else {
@@ -759,7 +764,7 @@ class TxStore {
     }
     const web3 = this.web3Store.web3;
     const receipt = await web3.eth.getTransactionReceipt(this.approval);
-    return receipt.gasUsed.asUintN();
+    return BigInt.asUintN(64, receipt.gasUsed);
   }
 }
 

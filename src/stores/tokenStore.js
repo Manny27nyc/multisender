@@ -51,7 +51,7 @@ class TokenStore {
       const web3 = this.web3Store.web3;
       const token = new web3.eth.Contract(ERC20ABI, address);
       const decimals = await token.methods.decimals().call();
-      this.decimals = decimals.asUintN();
+      this.decimals = BigInt.asUintN(64, decimals);
       return this.decimals;
     } catch (e) {
       this.errors.push(
