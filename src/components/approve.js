@@ -14,12 +14,11 @@ export let ApproveStep = withWizard(
           this.props = props;
           this.txStore = props.UiStore.txStore;
           this.web3Store = props.UiStore.web3Store;
+          this.tokenStore = props.UiStore.tokenStore;
           this.intervalId = null;
           this.state = {
             txs: this.txStore.txs,
           };
-
-          // this.props.addNextHandler(this.onNext);
         }
         componentDidMount() {
           (async () => {
@@ -49,13 +48,30 @@ export let ApproveStep = withWizard(
           }
         }
 
-        async doNextStep(nextStep, isLoading) {
+        async doPreviousStep(previousStep, isLoading) {
+          console.log("approve: doPreviousStep");
+          if (isLoading) {
+            return;
+          }
+          try {
+            await previousStep();
+          } catch (e) {
+            console.error(e);
+            swal({
+              title: "Approve Error",
+              text: e.message,
+              icon: "error",
+            });
+          }
+        }
+
+        async doNextStep(previousStep, isLoading) {
           console.log("approve: doNextStep");
           if (isLoading) {
             return;
           }
           try {
-            nextStep();
+            await previousStep();
           } catch (e) {
             console.error(e);
             swal({
@@ -68,6 +84,9 @@ export let ApproveStep = withWizard(
 
         onNext = async () => {
           console.log("approve: onNext");
+          if (this.tokenStore.totalBalanceBN.gt(this.tokenStore.allowanceBN)) {
+            this.props.previousStep();
+          }
           // nextStep();
         };
 
@@ -102,6 +121,10 @@ export let ApproveStep = withWizard(
           } else {
             status = `Waiting for you to sign an Approve transaction in Metamask`;
           }
+          const nextButtonDisabled = this.tokenStore.totalBalanceBN.gt(
+            this.tokenStore.allowanceBN
+          );
+          const previousButtonDisabled = txs.length > 0 && !mined;
           return (
             <div>
               <div className="description">
@@ -128,11 +151,12 @@ export let ApproveStep = withWizard(
                 <button
                   className="multisend-button multisend-button_prev"
                   onClick={async () =>
-                    await this.doNextStep(
+                    await this.doPreviousStep(
                       this.props.previousStep,
                       this.props.isLoading || this.web3Store.loading
                     )
                   }
+                  disabled={previousButtonDisabled}
                 >
                   Back
                 </button>
@@ -140,10 +164,11 @@ export let ApproveStep = withWizard(
                   className="multisend-button multisend-button_next"
                   onClick={async () =>
                     await this.doNextStep(
-                      this.props.nextStep,
+                      this.props.previousStep,
                       this.props.isLoading || this.web3Store.loading
                     )
                   }
+                  disabled={nextButtonDisabled}
                 >
                   Next
                 </button>

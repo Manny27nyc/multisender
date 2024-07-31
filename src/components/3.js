@@ -244,7 +244,7 @@ export let ThirdStep = withWizard(
             return;
           }
           try {
-            nextStep();
+            await nextStep();
           } catch (e) {
             if (null === this.state.error) {
               console.error(e);

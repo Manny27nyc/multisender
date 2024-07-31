@@ -3,7 +3,9 @@ import { fromWei, toHex, toWei } from "web3-utils";
 import ERC20ABI from "../abis/ERC20ABI.json";
 import MultiSenderAbi from "../abis/StormMultisender.json";
 import swal from "sweetalert";
+
 const BN = require("bn.js");
+const BigNumber = require("bignumber.js");
 
 class TxStore {
   txs = [];
@@ -118,10 +120,14 @@ class TxStore {
         };
       }
       console.log("optionsObj", optionsObj);
+      let allowance = this.tokenStore.totalBalanceWithDecimals;
+      if (this.tokenStore.allowanceBN.gt(new BN(0))) {
+        allowance = "0";
+      }
       return token.methods
         .approve(
           await this.tokenStore.proxyMultiSenderAddress(),
-          this.tokenStore.totalBalanceWithDecimals
+          "0x" + allowance
         )
         .send(optionsObj)
         .once("transactionHash", (hash) => {
@@ -135,7 +141,15 @@ class TxStore {
         })
         .once("receipt", async (receipt) => {
           try {
-            await this.getTxStatus(receipt.transactionHash);
+            const status = await this.getTxStatus(receipt.transactionHash);
+            if ("mined" === status) {
+              this.tokenStore.allowanceBN = new BN(allowance, 16);
+              this.tokenStore.allowance = new BigNumber(
+                this.tokenStore.allowanceBN.toString()
+              )
+                .div(this.tokenStore.multiplier)
+                .toString(10);
+            }
           } catch (e) {
             console.error(e);
           }
@@ -152,10 +166,14 @@ class TxStore {
   async getApproveGas() {
     const web3 = this.web3Store.web3;
     const token = new web3.eth.Contract(ERC20ABI, this.tokenStore.tokenAddress);
+    let allowance = this.tokenStore.totalBalanceWithDecimals;
+    if (this.tokenStore.allowanceBN.gt(new BN(0))) {
+      allowance = "0";
+    }
     let encodedData = await token.methods
       .approve(
         await this.tokenStore.proxyMultiSenderAddress(),
-        this.tokenStore.totalBalanceWithDecimals
+        "0x" + allowance
       )
       .encodeABI({ from: this.web3Store.defaultAccount });
     const gas = await web3.eth.estimateGas({
@@ -708,7 +726,7 @@ class TxStore {
   async getTxStatus(hash) {
     console.log("GET TX STATUS", hash);
     if (!this.keepRunning) {
-      return;
+      return null;
     }
     const index = this.txHashToIndex[hash];
     const web3 = this.web3Store.web3;
@@ -752,6 +770,7 @@ class TxStore {
         this.txs[index].status = `mined`;
       }
     }
+    return this.txs[index].status;
   }
 
   // gas used by the already processed Approve tx

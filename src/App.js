@@ -88,16 +88,18 @@ export let App = inject("UiStore")(
     }
 
     componentDidMount() {
-      (async () => {
-        try {
-          await this.tokenStore.proxyMultiSenderAddress();
-          this.setState((state, props) => {
-            return { ...state, loading: this.web3Store.loading };
-          });
-        } catch (ex) {
-          console.log("App:", ex);
-        }
-      })();
+      this.interval = setInterval(() => {
+        (async () => {
+          try {
+            await this.tokenStore.proxyMultiSenderAddress();
+            this.setState((state, props) => {
+              return { ...state, loading: this.web3Store.loading };
+            });
+          } catch (ex) {
+            console.log("App:", ex);
+          }
+        })();
+      }, 1000);
     }
 
     onStepChange = (stepIndex) => {

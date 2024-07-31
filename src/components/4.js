@@ -25,26 +25,27 @@ export let FourthStep = withWizard(
           // this.props.addNextHandler(this.onNext);
         }
 
-        async doNextStep(goToStep, isLoading) {
+        async doNextStep(nextStep, isLoading) {
           console.log("4: doNextStep");
           if (isLoading) {
             return;
           }
-          try {
-            goToStep(0);
-          } catch (e) {
-            console.error(e);
-            swal({
-              title: "Multi Tx Send Error",
-              text: e.message,
-              icon: "error",
-            });
-          }
+          location.reload();
+          // try {
+          //   await nextStep();
+          // } catch (e) {
+          //   console.error(e);
+          //   swal({
+          //     title: "Multi Tx Send Error",
+          //     text: e.message,
+          //     icon: "error",
+          //   });
+          // }
         }
 
         onNext = async (nextStep) => {
           console.log("4: onNext");
-          nextStep();
+          // nextStep();
           location.reload();
         };
 
@@ -142,6 +143,7 @@ export let FourthStep = withWizard(
               this.web3Store.currencyTicker +
               " to many recipients from the Multisend smart contract";
           }
+          const previousButtonDisabled = txs.length < totalNumberOftx || !mined;
           return (
             <div>
               <div className="description">
@@ -169,10 +171,11 @@ export let FourthStep = withWizard(
                   className="multisend-button multisend-button_prev"
                   onClick={async () =>
                     await this.doNextStep(
-                      this.props.goToStep,
+                      this.props.nextStep,
                       this.props.isLoading || this.web3Store.loading
                     )
                   }
+                  disabled={previousButtonDisabled}
                 >
                   Home
                 </button>

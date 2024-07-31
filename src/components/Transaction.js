@@ -1,5 +1,6 @@
 import React from "react";
 import { inject, observer } from "mobx-react";
+import { PulseLoader } from "react-spinners";
 
 export let Transaction = inject("UiStore")(
   observer(
@@ -22,6 +23,7 @@ export let Transaction = inject("UiStore")(
             classname = "table-td_check-hash_wait";
         }
         // const classname = status === 'mined' ? 'table-td_check-hash_done' : 'table-td_check-hash_wait'
+        const loading = "mined" !== status;
         return (
           <div className="table-tr">
             <div className={`table-td table-td_check-hash ${classname}`}>
@@ -30,6 +32,9 @@ export let Transaction = inject("UiStore")(
                 {hash}
               </a>{" "}
               <br /> {name} <br /> Status: {status}
+              <div className="sweet-loading">
+                <PulseLoader color={"#123abc"} loading={loading} />
+              </div>
             </div>
           </div>
         );

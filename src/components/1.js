@@ -220,7 +220,7 @@ export let FirstStep = withWizard(
             return;
           }
           try {
-            nextStep();
+            await nextStep();
           } catch (e) {
             if (null === this.state.error) {
               console.error(e);
@@ -241,8 +241,18 @@ export let FirstStep = withWizard(
 
         onNext = async () => {
           console.log("1: onNext");
-          // console.log('first step')
+          if ("" === this.tokenStore.tokenAddress) {
+            this.setState({
+              error: {
+                title: "The token address is not selected",
+                text: "Select a token to send in the Token Address selector please.",
+                icon: "error",
+              },
+            });
+            throw new Error("The token address is not selected");
+          }
           if (!this.parseCompleted) {
+            // console.log('first step')
             await this.onCsvChange(this.state.csv);
           }
           await this.tokenStore.parseAddresses();
@@ -253,23 +263,17 @@ export let FirstStep = withWizard(
           if (this.tokenStore.jsonAddresses.length === 0) {
             this.setState({
               error: {
-                title: "The address list is empty.",
+                title: "The address list is empty",
                 text: "Please make sure you set correct CSV or JSON format in input selector",
                 icon: "error",
               },
             });
-            // swal({
-            //   title: "The address list is empty.",
-            //   text: "Please make sure you set correct CSV or JSON format in input selector",
-            //   icon: "error",
-            // });
-            throw new Error("The address list is empty.");
+            throw new Error("The address list is empty");
           }
           if (this.tokenStore.invalid_addresses.length > 0) {
             this.setState({
               error: {
-                title:
-                  "There are invalid eth addresses. If you click Next, multisender will remove them from the list.",
+                title: "Invalid eth addresses found",
                 text: JSON.stringify(
                   this.tokenStore.invalid_addresses.slice(),
                   null,
@@ -278,19 +282,7 @@ export let FirstStep = withWizard(
                 icon: "error",
               },
             });
-            throw new Error(
-              "There are invalid eth addresses. If you click Next, multisender will remove them from the list."
-            );
-            // swal({
-            //   title:
-            //     "There are invalid eth addresses. If you click Next, multisender will remove them from the list.",
-            //   text: JSON.stringify(
-            //     this.tokenStore.invalid_addresses.slice(),
-            //     null,
-            //     "\n"
-            //   ),
-            //   icon: "error",
-            // });
+            throw new Error("Invalid eth addresses found");
           }
         };
 

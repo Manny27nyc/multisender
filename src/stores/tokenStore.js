@@ -178,6 +178,7 @@ class TokenStore {
           console.log(err);
           return;
         }
+        console.log("newBlockHeaders handler");
         const allowance = await token.methods
           .allowance(
             this.web3Store.defaultAccount,
@@ -370,7 +371,7 @@ class TokenStore {
   }
 
   get totalBalanceWithDecimals() {
-    return this.totalBalanceBN.toString(10);
+    return this.totalBalanceBN.toString(16);
   }
   get multiplier() {
     const decimals = new BN(Number(this.decimals));
