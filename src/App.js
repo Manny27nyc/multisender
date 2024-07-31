@@ -14,8 +14,9 @@ import { Route, Redirect } from "react-router-dom";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import { inject } from "mobx-react";
 import "./assets/stylesheets/application.css";
-import Navigation from "./components/Navigation";
-import { Wizard, Steps, Step } from "react-albus";
+// import Navigation from "./components/Navigation";
+// import { Wizard, Steps, Step } from "react-albus";
+import { Wizard } from "react-use-wizard";
 import { Line } from "rc-progress";
 import { PulseLoader } from "react-spinners";
 
@@ -44,6 +45,35 @@ import { PulseLoader } from "react-spinners";
 //   />
 // );
 
+const WizardHeader = (props) => (
+  <>
+    <h1 className="title">
+      <strong>Welcome to Token</strong> MultiSender
+    </h1>
+    <Line percent={((props.step + 1) / 4) * 100} className="pad-b" />
+    <div className="sweet-loading">
+      <PulseLoader color={"#123abc"} loading={props.loading} />
+    </div>
+  </>
+);
+
+const WizardStepWrapper = ({ children }) => (
+  <>
+    <div className="multisend-container multisend-container_bg">
+      <div className="content">
+        <TransitionGroup>
+          <CSSTransition
+            classNames="multisend"
+            timeout={{ enter: 500, exit: 500 }}
+          >
+            {children}
+          </CSSTransition>
+        </TransitionGroup>
+      </div>
+    </div>
+  </>
+);
+
 export let App = inject("UiStore")(
   class App extends React.Component {
     constructor(props) {
@@ -53,6 +83,7 @@ export let App = inject("UiStore")(
       this.nextHandlers = [];
       this.state = {
         loading: this.web3Store.loading,
+        currentWizardStep: 0,
       };
     }
 
@@ -61,7 +92,7 @@ export let App = inject("UiStore")(
         try {
           await this.tokenStore.proxyMultiSenderAddress();
           this.setState((state, props) => {
-            return { loading: this.web3Store.loading };
+            return { ...state, loading: this.web3Store.loading };
           });
         } catch (ex) {
           console.log("App:", ex);
@@ -69,21 +100,15 @@ export let App = inject("UiStore")(
       })();
     }
 
-    onNext = (wizard) => {
-      (async () => {
-        try {
-          this.nextHandlers.forEach(async (handler) => {
-            await handler(wizard);
-          });
-        } catch (ex) {
-          console.log("onNext:", ex);
-        }
-      })();
+    onStepChange = (stepIndex) => {
+      this.setState((state, props) => {
+        return { ...state, currentWizardStep: stepIndex };
+      });
     };
 
-    addNextHandler = (handler) => {
-      this.nextHandlers.push(handler);
-    };
+    // addNextHandler = (handler) => {
+    //   this.nextHandlers.push(handler);
+    // };
 
     render() {
       const { startedUrl } = this.web3Store;
@@ -104,57 +129,22 @@ export let App = inject("UiStore")(
           <Route
             render={({ history }) => (
               <Wizard
+                startIndex={0}
+                header={
+                  <WizardHeader
+                    step={this.state.currentWizardStep}
+                    loading={this.state.loading}
+                  />
+                }
+                wrapper={<WizardStepWrapper />}
                 history={history}
-                onNext={this.onNext}
-                render={({ step, steps }) => (
-                  <div className="multisend-container multisend-container_bg">
-                    <div className="content">
-                      <h1 className="title">
-                        <strong>Welcome to Token</strong> MultiSender
-                      </h1>
-                      <Line
-                        percent={
-                          ((steps.indexOf(step) + 1) / steps.length) * 100
-                        }
-                        className="pad-b"
-                      />
-                      <div className="sweet-loading">
-                        <PulseLoader
-                          color={"#123abc"}
-                          loading={this.state.loading}
-                        />
-                      </div>
-                      <TransitionGroup>
-                        <CSSTransition
-                          key={step.id}
-                          classNames="multisend"
-                          timeout={{ enter: 500, exit: 500 }}
-                        >
-                          <Steps key={step.id} step={step}>
-                            <Step id="home">
-                              <FirstStep addNextHandler={this.addNextHandler} />
-                            </Step>
-                            <Step id="inspect">
-                              <ThirdStep addNextHandler={this.addNextHandler} />
-                            </Step>
-                            <Step id="approve">
-                              <ApproveStep
-                                addNextHandler={this.addNextHandler}
-                              />
-                            </Step>
-                            <Step id="multisend">
-                              <FourthStep
-                                addNextHandler={this.addNextHandler}
-                              />
-                            </Step>
-                          </Steps>
-                        </CSSTransition>
-                      </TransitionGroup>
-                      <Navigation />
-                    </div>
-                  </div>
-                )}
-              />
+                onStepChange={this.onStepChange}
+              >
+                <FirstStep />
+                <ThirdStep />
+                <ApproveStep />
+                <FourthStep />
+              </Wizard>
             )}
           />
         </div>

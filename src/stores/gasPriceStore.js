@@ -11,7 +11,7 @@ class GasPriceStore {
     { label: "instant", labelETH: "FastGasPrice", value: "21" },
   ];
   selectedGasPrice = 22;
-  gasPriceBase = "0";
+  gasPriceBase = 0;
   selectedGasShare = "50";
 
   gasPricePromise = null;
@@ -77,17 +77,16 @@ class GasPriceStore {
   }
 
   get standardInHex() {
-    const v = toWei(this.selectedGasPrice.toFixed(9).toString(), "gwei");
+    const v = parseInt(toWei(this.selectedGasPrice.toFixed(9), "gwei"));
     return toHex(v);
   }
   get standardBaseInHex() {
-    const v = toWei(this.gasPriceBase.toFixed(9).toString(), "gwei");
+    const v = parseInt(toWei(this.gasPriceBase.toFixed(9), "gwei"));
     return toHex(v);
   }
   get fullGasPriceInHex() {
-    const maxFeePerGas =
-      parseFloat(this.selectedGasPrice) + parseFloat(this.gasPriceBase);
-    const v = toWei(maxFeePerGas.toFixed(9).toString(), "gwei");
+    const maxFeePerGas = this.selectedGasPrice + this.gasPriceBase;
+    const v = parseInt(toWei(maxFeePerGas.toFixed(9), "gwei"));
     return toHex(v);
   }
 

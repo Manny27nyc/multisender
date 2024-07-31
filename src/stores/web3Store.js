@@ -66,8 +66,15 @@ class Web3Store {
         await this.getUserTokens(web3Config);
         const block = await this.web3.eth.getBlock("latest");
         this.isEIP1559 = "undefined" !== typeof block.baseFeePerGas;
-        this.maxBlockGas = BigInt.asUintN(64, block.gasLimit);
-        console.log("web3 loaded");
+        this.maxBlockGas = parseInt(
+          BigInt.asUintN(64, block.gasLimit).toString()
+        );
+        console.log(
+          "web3 loaded: maxBlockGas = " +
+            this.maxBlockGas +
+            "; isEIP1559 = " +
+            this.isEIP1559
+        );
         return this;
       })
       .catch((e) => {

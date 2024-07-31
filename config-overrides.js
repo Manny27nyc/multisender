@@ -21,6 +21,10 @@ module.exports = override(
     modifyVars: { "@primary-color": "#1DA57A" },
   }),
   function override(config) {
+    if (process.env.DEV_MODE) {
+      config.mode = "development";
+      config.optimization.minimize = false;
+    }
     config.ignoreWarnings = [/Failed to parse source map/];
     const fallback = config.resolve.fallback || {};
     Object.assign(fallback, {

@@ -3,7 +3,7 @@ import { fromWei, toHex, toWei } from "web3-utils";
 import ERC20ABI from "../abis/ERC20ABI.json";
 import MultiSenderAbi from "../abis/StormMultisender.json";
 import swal from "sweetalert";
-const BN = require("bignumber.js");
+const BN = require("bn.js");
 
 class TxStore {
   txs = [];
@@ -30,15 +30,7 @@ class TxStore {
     this.keepRunning = true;
     this.txs = [];
     this.approval = "";
-    if (
-      new BN(
-        this.tokenStore.totalBalance === "" ? "0" : this.tokenStore.totalBalance
-      ).gt(
-        new BN(
-          this.tokenStore.allowance === "" ? "0" : this.tokenStore.allowance
-        )
-      )
-    ) {
+    if (this.tokenStore.totalBalanceBN.gt(this.tokenStore.allowanceBN)) {
       this._approve();
       const interval = setInterval(() => {
         if (this.approval) {
@@ -81,15 +73,7 @@ class TxStore {
     this.keepRunning = true;
     this.txs = [];
     this.approval = "";
-    if (
-      new BN(
-        this.tokenStore.totalBalance === "" ? "0" : this.tokenStore.totalBalance
-      ).gt(
-        new BN(
-          this.tokenStore.allowance === "" ? "0" : this.tokenStore.allowance
-        )
-      )
-    ) {
+    if (this.tokenStore.totalBalanceBN.gt(this.tokenStore.allowanceBN)) {
       this._approve();
       const interval = setInterval(() => {
         if (this.approval) {
@@ -180,7 +164,7 @@ class TxStore {
       to: this.tokenStore.tokenAddress,
       gas: this.web3Store.maxBlockGas,
     });
-    return BigInt.asUintN(64, gas);
+    return parseInt(BigInt.asUintN(64, gas).toString());
   }
 
   async _getTransferGas(to, value) {
@@ -194,7 +178,7 @@ class TxStore {
         to: to,
         gas: this.web3Store.maxBlockGas,
       });
-      return BigInt.asUintN(64, gas);
+      return parseInt(BigInt.asUintN(64, gas).toString());
     } else {
       // const { currentFee } = this.tokenStore;
       const token = new web3.eth.Contract(ERC20ABI, tokenAddress);
@@ -209,7 +193,13 @@ class TxStore {
         to: tokenAddress,
         gas: this.web3Store.maxBlockGas,
       });
-      return BigInt.asUintN(64, gas);
+      console.log(
+        "gas =",
+        gas,
+        "; gas_int =",
+        parseInt(BigInt.asUintN(64, gas).toString())
+      );
+      return parseInt(BigInt.asUintN(64, gas).toString());
     }
   }
 
@@ -225,10 +215,10 @@ class TxStore {
   }
 
   is_equal_values(balances_to_send) {
-    const amount = balances_to_send[0];
+    const amount = new BN(balances_to_send[0]);
     for (let i = 1; i < balances_to_send.length; i++) {
-      let b = balances_to_send[i];
-      if (0 !== b.comparedTo(amount)) {
+      let b = new BN(balances_to_send[i]);
+      if (0 !== b.cmp(amount)) {
         return false;
       }
     }
@@ -240,7 +230,7 @@ class TxStore {
     const is_equal_values = this.is_equal_values(balances_to_send);
 
     const totalInWei = balances_to_send.reduce((total, val) => {
-      return total.plus(new BN(val));
+      return total.add(new BN(val));
     }, new BN("0"));
     const balances_to_send_sum = totalInWei.toString(10);
 
@@ -281,13 +271,12 @@ class TxStore {
   }
 
   getEthValue(token_address, balances_to_send, currentFee) {
-    const totalInWei = balances_to_send.reduce((total, val) => {
-      return total.plus(new BN(val));
-    }, new BN("0"));
-
     if (token_address === "0x000000000000000000000000000000000000bEEF") {
-      const totalInEth = fromWei(totalInWei.toString(), "wei");
-      return new BN(currentFee).plus(totalInEth);
+      const totalInWei = balances_to_send.reduce((total, val) => {
+        return total.add(new BN(val));
+      }, new BN("0"));
+
+      return new BN(currentFee).add(totalInWei);
     }
     return new BN(currentFee);
   }
@@ -296,22 +285,25 @@ class TxStore {
     let totalGas = 0;
 
     const token_address = this.tokenStore.tokenAddress;
-    let { addresses_to_send, balances_to_send, currentFee, totalBalance } =
-      this.tokenStore;
+    let { addresses_to_send, balances_to_send, currentFee } = this.tokenStore;
 
     const start = (slice - 1) * addPerTx;
     const end = slice * addPerTx;
     addresses_to_send = addresses_to_send.slice(start, end);
     balances_to_send = balances_to_send.slice(start, end);
     // const totalInWei = balances_to_send.reduce((total, val) => {
-    //   return total.plus(new BN(val));
+    //   return total.add(new BN(val));
     // }, new BN("0"));
 
     // const amount = balances_to_send[0];
     // const is_equal_values = this.is_equal_values(balances_to_send);
 
     // const balances_to_send_sum = totalInWei.toString(10);
-    let ethValue = getEthValue(token_address, balances_to_send, currentFee);
+    let ethValue = this.getEthValue(
+      token_address,
+      balances_to_send,
+      currentFee
+    );
     console.log(
       "slice",
       slice,
@@ -325,7 +317,7 @@ class TxStore {
     //   await this.tokenStore.proxyMultiSenderAddress()
     // );
 
-    let method = get_web3_method(
+    let method = await this.get_web3_method(
       token_address,
       addresses_to_send,
       balances_to_send
@@ -337,13 +329,13 @@ class TxStore {
     const txObj = {
       from: this.web3Store.defaultAccount,
       data: encodedData,
-      value: toHex(toWei(ethValue.toString(), "wei")),
+      value: "0x" + ethValue.toString(16),
       to: await this.tokenStore.proxyMultiSenderAddress(),
       gas: this.web3Store.maxBlockGas,
     };
     console.log("estimateGas txObj=", txObj);
     const gas = await web3.eth.estimateGas(txObj);
-    totalGas += BigInt.asUintN(64, gas);
+    totalGas += parseInt(BigInt.asUintN(64, gas).toString());
 
     // if (token_address === "0x000000000000000000000000000000000000bEEF") {
     //   let encodedData = null;
@@ -415,25 +407,28 @@ class TxStore {
       return;
     }
     const token_address = this.tokenStore.tokenAddress;
-    let { addresses_to_send, balances_to_send, currentFee, totalBalance } =
-      this.tokenStore;
+    let { addresses_to_send, balances_to_send, currentFee } = this.tokenStore;
 
     const start = (slice - 1) * addPerTx;
     const end = slice * addPerTx;
     addresses_to_send = addresses_to_send.slice(start, end);
     balances_to_send = balances_to_send.slice(start, end);
     // const totalInWei = balances_to_send.reduce((total, val) => {
-    //   return total.plus(new BN(val));
+    //   return total.add(new BN(val));
     // }, new BN("0"));
 
     // const amount = balances_to_send[0];
     // const is_equal_values = this.is_equal_values(balances_to_send);
 
     // const balances_to_send_sum = totalInWei.toString(10);
-    let ethValue = getEthValue(token_address, balances_to_send, currentFee);
+    let ethValue = this.getEthValue(
+      token_address,
+      balances_to_send,
+      currentFee
+    );
     // if (token_address === "0x000000000000000000000000000000000000bEEF") {
     //   const totalInEth = fromWei(totalInWei.toString(), "wei");
-    //   ethValue = new BN(currentFee).plus(totalInEth);
+    //   ethValue = new BN(currentFee).add(totalInEth);
     // } else {
     //   ethValue = new BN(currentFee);
     // }
@@ -452,7 +447,7 @@ class TxStore {
     // );
 
     try {
-      let method = get_web3_method(
+      let method = await this.get_web3_method(
         token_address,
         addresses_to_send,
         balances_to_send
@@ -464,17 +459,17 @@ class TxStore {
       const txObj = {
         from: this.web3Store.defaultAccount,
         data: encodedData,
-        value: toHex(toWei(ethValue.toString(), "wei")),
+        value: "0x" + ethValue.toString(16),
         to: await this.tokenStore.proxyMultiSenderAddress(),
         gas: this.web3Store.maxBlockGas,
       };
       console.log("txObj", txObj);
       let gas = await web3.eth.estimateGas(txObj);
-      console.log("gas", BigInt.asUintN(64, gas));
+      console.log("gas", parseInt(BigInt.asUintN(64, gas).toString()));
       let optionsObj = {
         from: this.web3Store.defaultAccount,
-        gas: toHex(BigInt.asUintN(64, gas)),
-        value: toHex(toWei(ethValue.toString(), "wei")),
+        gas: toHex(parseInt(BigInt.asUintN(64, gas).toString())),
+        value: "0x" + ethValue.toString(16),
       };
       if (this.web3Store.isEIP1559) {
         optionsObj = {
@@ -721,7 +716,7 @@ class TxStore {
     const txInfo = await web3.eth.getTransaction(hash);
     const receipt = await web3.eth.getTransactionReceipt(hash);
     if (receipt.hasOwnProperty("status")) {
-      const status = BigInt.asUintN(64, receipt.status);
+      const status = parseInt(BigInt.asUintN(64, receipt.status).toString());
       if (status === 1) {
         this.txs[index].status = `mined`;
       } else if (status === 0) {
@@ -736,7 +731,8 @@ class TxStore {
       } else {
         // unknown status. pre-Byzantium
         if (
-          BigInt.asUintN(64, receipt.gasUsed) >= BigInt.asUintN(64, txInfo.gas)
+          parseInt(BigInt.asUintN(64, receipt.gasUsed).toString()) >=
+          parseInt(BigInt.asUintN(64, txInfo.gas).toString())
         ) {
           this.txs[index].status = `error`;
           this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
@@ -747,7 +743,8 @@ class TxStore {
     } else {
       // unknown status. pre-Byzantium
       if (
-        BigInt.asUintN(64, receipt.gasUsed) >= BigInt.asUintN(64, txInfo.gas)
+        parseInt(BigInt.asUintN(64, receipt.gasUsed).toString()) >=
+        parseInt(BigInt.asUintN(64, txInfo.gas).toString())
       ) {
         this.txs[index].status = `error`;
         this.txs[index].name = `Mined but with errors. Perhaps out of gas`;
@@ -764,7 +761,7 @@ class TxStore {
     }
     const web3 = this.web3Store.web3;
     const receipt = await web3.eth.getTransactionReceipt(this.approval);
-    return BigInt.asUintN(64, receipt.gasUsed);
+    return parseInt(BigInt.asUintN(64, receipt.gasUsed).toString());
   }
 }
 

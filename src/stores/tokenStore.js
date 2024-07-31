@@ -4,23 +4,28 @@ import ERC20ABI from "../abis/ERC20ABI.json";
 import { fromWei, toWei, toChecksumAddress } from "web3-utils";
 import { isAddress } from "web3-validator";
 
-const BN = require("bignumber.js");
+const BN = require("bn.js");
+const BigNumber = require("bignumber.js");
 
 class TokenStore {
   decimals = "";
   jsonAddresses = [];
   tokenAddress = "";
   defAccTokenBalance = "";
+  defAccTokenBalanceBN = new BN(0);
   allowance = "";
+  allowanceBN = new BN(0);
   // set non-zero reasonable value to ensure correct gas calculation
   currentFee = "10000000000000";
   tokenSymbol = "";
   ethBalance = "";
+  ethBalanceBN = new BN(0);
   balances_to_send = [];
   addresses_to_send = [];
   invalid_addresses = [];
   filteredAddresses = [];
   totalBalance = "0";
+  totalBalanceBN = new BN(0);
   arrayLimit = 0;
   errors = [];
   dublicates = [];
@@ -51,7 +56,7 @@ class TokenStore {
       const web3 = this.web3Store.web3;
       const token = new web3.eth.Contract(ERC20ABI, address);
       const decimals = await token.methods.decimals().call();
-      this.decimals = BigInt.asUintN(64, decimals);
+      this.decimals = parseInt(BigInt.asUintN(64, decimals).toString());
       return this.decimals;
     } catch (e) {
       this.errors.push(
@@ -68,10 +73,14 @@ class TokenStore {
     try {
       const web3 = this.web3Store.web3;
       const token = new web3.eth.Contract(ERC20ABI, this.tokenAddress);
-      const defAccTokenBalance = await token.methods
+      const balance = await token.methods
         .balanceOf(this.web3Store.defaultAccount)
         .call();
-      this.defAccTokenBalance = new BN(defAccTokenBalance.toString())
+      const balanceStr = balance.toString();
+      this.defAccTokenBalanceBN = new BN(balanceStr);
+      this.defAccTokenBalance = new BigNumber(
+        this.defAccTokenBalanceBN.toString()
+      )
         .div(this.multiplier)
         .toString(10);
       web3.eth.subscribe("newBlockHeaders", async (err, result) => {
@@ -79,10 +88,14 @@ class TokenStore {
           console.log(err);
           return;
         }
-        const defAccTokenBalance = await token.methods
+        const balance = await token.methods
           .balanceOf(this.web3Store.defaultAccount)
           .call();
-        this.defAccTokenBalance = new BN(defAccTokenBalance.toString())
+        const balanceStr = balance.toString();
+        this.defAccTokenBalanceBN = new BN(balanceStr);
+        this.defAccTokenBalance = new BigNumber(
+          this.defAccTokenBalanceBN.toString()
+        )
           .div(this.multiplier)
           .toString(10);
       });
@@ -100,19 +113,25 @@ class TokenStore {
     }
     try {
       const web3 = this.web3Store.web3;
-      let ethBalance = await web3.eth.getBalance(this.web3Store.defaultAccount);
-      ethBalance = fromWei(ethBalance, "ether");
-      this.ethBalance = new BN(ethBalance).toFormat(3);
+      const ethBalance = await web3.eth.getBalance(
+        this.web3Store.defaultAccount
+      );
+      const ethBalanceStr = ethBalance.toString();
+      this.ethBalanceBN = new BN(ethBalanceStr);
+      const ethBalanceETH = fromWei(this.ethBalanceBN, "ether");
+      this.ethBalance = parseFloat(ethBalanceETH).toFixed(3);
       web3.eth.subscribe("newBlockHeaders", async (err, result) => {
         if (err) {
           console.log(err);
           return;
         }
-        let ethBalance = await web3.eth.getBalance(
+        const ethBalance = await web3.eth.getBalance(
           this.web3Store.defaultAccount
         );
-        ethBalance = fromWei(ethBalance, "ether");
-        this.ethBalance = new BN(ethBalance).toFormat(3);
+        const ethBalanceStr = ethBalance.toString();
+        this.ethBalanceBN = new BN(ethBalanceStr);
+        const ethBalanceETH = fromWei(this.ethBalanceBN, "ether");
+        this.ethBalance = parseFloat(ethBalanceETH).toFixed(3);
       });
       return this.ethBalance;
     } catch (e) {
@@ -149,7 +168,9 @@ class TokenStore {
           await this.proxyMultiSenderAddress()
         )
         .call();
-      this.allowance = new BN(allowance.toString())
+      const allowanceStr = allowance.toString();
+      this.allowanceBN = new BN(allowanceStr);
+      this.allowance = new BigNumber(this.allowanceBN.toString())
         .div(this.multiplier)
         .toString(10);
       web3.eth.subscribe("newBlockHeaders", async (err, result) => {
@@ -163,7 +184,9 @@ class TokenStore {
             await this.proxyMultiSenderAddress()
           )
           .call();
-        this.allowance = new BN(allowance.toString())
+        const allowanceStr = allowance.toString();
+        this.allowanceBN = new BN(allowanceStr);
+        this.allowance = new BigNumber(this.allowanceBN.toString())
           .div(this.multiplier)
           .toString(10);
       });
@@ -222,7 +245,9 @@ class TokenStore {
     await this.getArrayLimit();
     this.decimals = "";
     this.defAccTokenBalance = "";
+    this.defAccTokenBalanceBN = new BN(0);
     this.allowance = "";
+    this.allowanceBN = new BN(0);
     this.tokenSymbol = "";
     if (
       isAddress(this.web3Store.defaultAccount) &&
@@ -238,6 +263,7 @@ class TokenStore {
       this.tokenSymbol = this.web3Store.currencyTicker;
       this.decimals = 18;
       this.defAccTokenBalance = this.ethBalance;
+      this.defAccTokenBalanceBN = this.ethBalanceBN;
     }
   }
 
@@ -254,15 +280,19 @@ class TokenStore {
     this.jsonAddresses = [];
     this.tokenAddress = "";
     this.defAccTokenBalance = "";
+    this.defAccTokenBalanceBN = new BN(0);
     this.allowance = "";
-    this.currentFee = "0";
+    this.allowanceBN = new BN(0);
+    this.currentFee = "10000000000000";
     this.tokenSymbol = "";
     this.ethBalance = "";
+    this.ethBalanceBN = new BN(0);
     this.balances_to_send = [];
     this.addresses_to_send = [];
     this.invalid_addresses = [];
     this.filteredAddresses = [];
     this.totalBalance = "0";
+    this.totalBalanceBN = new BN(0);
     this.arrayLimit = 0;
     this.errors = [];
     this.dublicates = [];
@@ -272,6 +302,7 @@ class TokenStore {
     this.addresses_to_send = [];
     this.dublicates = [];
     this.totalBalance = 0;
+    this.totalBalanceBN = new BN(0);
     this.invalid_addresses = [];
     this.balances_to_send = [];
     await Promise.all(
@@ -300,11 +331,14 @@ class TokenStore {
           return;
         }
         let balance = Object.values(account)[0];
-        this.totalBalance = new BN(balance)
+        this.totalBalance = new BigNumber(balance)
           .plus(this.totalBalance)
           .toString(10);
+        this.totalBalanceBN = new BN(
+          new BigNumber(this.multiplier).times(this.totalBalance).toString(10)
+        );
         // console.log('balance,', balance)
-        balance = this.multiplier.times(balance);
+        balance = new BigNumber(this.multiplier).times(balance);
         const indexAddr = this.addresses_to_send.indexOf(address);
         if (indexAddr === -1) {
           this.addresses_to_send.push(address);
@@ -313,7 +347,7 @@ class TokenStore {
           if (this.dublicates.indexOf(address) === -1) {
             this.dublicates.push(address);
           }
-          this.balances_to_send[indexAddr] = new BN(
+          this.balances_to_send[indexAddr] = new BigNumber(
             this.balances_to_send[indexAddr]
           )
             .plus(balance)
@@ -324,7 +358,7 @@ class TokenStore {
 
     this.jsonAddresses = this.addresses_to_send.map((addr, index) => {
       let obj = {};
-      obj[addr] = new BN(this.balances_to_send[index])
+      obj[addr] = new BigNumber(this.balances_to_send[index])
         .div(this.multiplier)
         .toString(10);
       return obj;
@@ -336,11 +370,11 @@ class TokenStore {
   }
 
   get totalBalanceWithDecimals() {
-    return new BN(this.totalBalance).times(this.multiplier).toString(10);
+    return this.totalBalanceBN.toString(10);
   }
   get multiplier() {
-    const decimals = Number(this.decimals);
-    return new BN(10).pow(decimals);
+    const decimals = new BN(Number(this.decimals));
+    return new BN(10).pow(decimals).toString();
   }
 
   get totalNumberTx() {
@@ -358,9 +392,9 @@ class TokenStore {
   // get totalCostInEth(){
   //   const standardGasPrice = toWei(this.gasPriceStore.selectedGasPrice.toString(), 'gwei');
   //   const currentFeeInWei = toWei(this.currentFee, "wei");
-  //   const tx = new BN(standardGasPrice).times(new BN('5000000'))
-  //   const txFeeMiners = tx.times(new BN(this.totalNumberTx))
-  //   const contractFee = new BN(currentFeeInWei).times(this.totalNumberTx);
+  //   const tx = new BigNumber(standardGasPrice).times(new BigNumber('5000000'))
+  //   const txFeeMiners = tx.times(new BigNumber(this.totalNumberTx))
+  //   const contractFee = new BigNumber(currentFeeInWei).times(this.totalNumberTx);
   //
   //   return fromWei(txFeeMiners.plus(contractFee).toString(10), "wei")
   // }
@@ -371,15 +405,19 @@ decorate(TokenStore, {
   jsonAddresses: observable,
   tokenAddress: observable,
   defAccTokenBalance: observable,
+  defAccTokenBalanceBN: observable,
   allowance: observable,
+  allowanceBN: observable,
   currentFee: observable,
   tokenSymbol: observable,
   ethBalance: observable,
+  ethBalanceBN: observable,
   balances_to_send: observable,
   addresses_to_send: observable,
   invalid_addresses: observable,
   filteredAddresses: observable,
   totalBalance: observable,
+  totalBalanceBN: observable,
   arrayLimit: observable,
   errors: observable,
   dublicates: observable,

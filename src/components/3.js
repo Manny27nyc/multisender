@@ -1,10 +1,12 @@
 import React from "react";
 import { inject, observer } from "mobx-react";
-import BN from "bignumber.js";
+import BigNumber from "bignumber.js";
+import BN from "bn.js";
 import { fromWei, toWei } from "web3-utils";
 import swal from "sweetalert";
 import Select from "react-select";
 import Form from "react-validation/build/form";
+import { withWizard } from "../hooks/withWizard";
 
 import DataTable, { createTheme } from "react-data-table-component";
 
@@ -39,13 +41,13 @@ const RecipientsDataTable = (props) => {
   const columns = [
     {
       name: "Address",
-      selector: "address",
+      selector: (row) => row.address,
       sortable: true,
       grow: 3.8,
     },
     {
       name: "Amount, " + props.tokenSymbol,
-      selector: "balance",
+      selector: (row) => row.balance,
       sortable: true,
       left: true,
     },
@@ -78,295 +80,306 @@ const RecipientsDataTable = (props) => {
   );
 };
 
-export let ThirdStep = inject("UiStore")(
-  observer(
-    class ThirdStep extends React.Component {
-      constructor(props) {
-        super(props);
-        this.tokenStore = props.UiStore.tokenStore;
-        this.txStore = props.UiStore.txStore;
-        this.web3Store = props.UiStore.web3Store;
-        this.gasPriceStore = props.UiStore.gasPriceStore;
-        console.log(this.gasPriceStore.gasPricesArray);
-        this.state = {
-          gasPrice: "",
-          transferGas: 0,
-          approveGas: 0,
-          multisendGas: 0,
-        };
-        this.gasSharesArray = [
-          { label: "20%", value: "20" },
-          { label: "50%", value: "50" },
-          { label: "70%", value: "70" },
-          { label: "100%", value: "100" },
-        ];
+export let ThirdStep = withWizard(
+  inject("UiStore")(
+    observer(
+      class ThirdStep extends React.Component {
+        constructor(props) {
+          super(props);
+          this.tokenStore = props.UiStore.tokenStore;
+          this.txStore = props.UiStore.txStore;
+          this.web3Store = props.UiStore.web3Store;
+          this.gasPriceStore = props.UiStore.gasPriceStore;
+          console.log(this.gasPriceStore.gasPricesArray);
+          this.state = {
+            gasPrice: "",
+            transferGas: 0,
+            approveGas: 0,
+            multisendGas: 0,
+            error: null,
+          };
+          this.gasSharesArray = [
+            { label: "20%", value: "20" },
+            { label: "50%", value: "50" },
+            { label: "70%", value: "70" },
+            { label: "100%", value: "100" },
+          ];
 
-        this.props.addNextHandler(this.onNext);
-      }
-      componentDidMount() {
-        if (this.tokenStore.dublicates.length > 0) {
-          swal({
-            title: `There were duplicated eth addresses in your list.`,
-            text: `${JSON.stringify(
-              this.tokenStore.dublicates.slice(),
-              null,
-              "\n"
-            )}.\n Multisender already combined the balances for those addreses. Please make sure it did the calculation correctly.`,
-            icon: "warning",
-          });
+          // this.props.addNextHandler(this.onNext);
         }
-        (async () => {
-          try {
-            const transferGas = await this.txStore.getTransferGas({
-              slice: this.tokenStore.totalNumberTx,
-              addPerTx: this.tokenStore.arrayLimit,
+        componentDidMount() {
+          if (this.tokenStore.dublicates.length > 0) {
+            swal({
+              title: `There were duplicated eth addresses in your list.`,
+              text: `${JSON.stringify(
+                this.tokenStore.dublicates.slice(),
+                null,
+                "\n"
+              )}.\n Multisender already combined the balances for those addreses. Please make sure it did the calculation correctly.`,
+              icon: "warning",
             });
-            this.setState({ transferGas });
-            if (
-              "0x000000000000000000000000000000000000bEEF" ===
-              this.tokenStore.tokenAddress
-            ) {
-              // Ether
-              const multisendGasOrig = await this.txStore.getMultisendGas({
+          }
+          (async () => {
+            try {
+              const transferGas = await this.txStore.getTransferGas({
                 slice: this.tokenStore.totalNumberTx,
                 addPerTx: this.tokenStore.arrayLimit,
               });
-              // Gas Limit: 84,279
-              // Gas Used by Transaction: 82,164 (97.49%)
-              const multisendGas = Math.floor(
-                parseInt(multisendGasOrig) * 0.975
-              );
-              this.setState({ multisendGas });
-              this.updateCurrentFee();
-            } else {
+              this.setState({ transferGas });
               if (
-                parseFloat(this.tokenStore.allowance) >=
-                parseFloat(this.tokenStore.totalBalance)
+                "0x000000000000000000000000000000000000bEEF" ===
+                this.tokenStore.tokenAddress
               ) {
+                // Ether
                 const multisendGasOrig = await this.txStore.getMultisendGas({
                   slice: this.tokenStore.totalNumberTx,
                   addPerTx: this.tokenStore.arrayLimit,
                 });
-                // Gas Limit: 116,153
-                // Gas Used by Transaction: 81,933 (70.54%) for ERC20
-                // Gas Limit: 170,018
-                // Gas Used by Transaction: 135,628 (79.77%) for ERC777 // TODO: detect token type
-                //
-                // Real life USDC token sending:
-                // Gas Limit & Usage by Txn: 917,832 | 605,912 (66.02%)
-                // @see https://etherscan.io/tx/0x23d3f8611b108010b3a0899337c6d4c6a90992655f1aaa49eae962aafabf8cc1
+                // Gas Limit: 84,279
+                // Gas Used by Transaction: 82,164 (97.49%)
                 const multisendGas = Math.floor(
-                  parseInt(multisendGasOrig) * 0.66
+                  parseInt(multisendGasOrig) * 0.975
                 );
-                const approveGas = await this.txStore.getApproveTxGas();
-                this.setState({ multisendGas, approveGas });
+                this.setState({ multisendGas });
                 this.updateCurrentFee();
               } else {
-                const approveGasOrig = await this.txStore.getApproveGas();
-                // Gas Limit: 66,181
-                // Gas Used by Transaction: 44,121 (66.67%)
-                const approveGas = Math.floor(
-                  parseInt(approveGasOrig) * 0.6667
-                );
-                this.setState({ approveGas });
+                if (
+                  this.tokenStore.allowanceBN.gte(
+                    this.tokenStore.totalBalanceBN
+                  )
+                ) {
+                  const multisendGasOrig = await this.txStore.getMultisendGas({
+                    slice: this.tokenStore.totalNumberTx,
+                    addPerTx: this.tokenStore.arrayLimit,
+                  });
+                  // Gas Limit: 116,153
+                  // Gas Used by Transaction: 81,933 (70.54%) for ERC20
+                  // Gas Limit: 170,018
+                  // Gas Used by Transaction: 135,628 (79.77%) for ERC777 // TODO: detect token type
+                  //
+                  // Real life USDC token sending:
+                  // Gas Limit & Usage by Txn: 917,832 | 605,912 (66.02%)
+                  // @see https://etherscan.io/tx/0x23d3f8611b108010b3a0899337c6d4c6a90992655f1aaa49eae962aafabf8cc1
+                  const multisendGas = Math.floor(
+                    parseInt(multisendGasOrig) * 0.66
+                  );
+                  const approveGas = await this.txStore.getApproveTxGas();
+                  this.setState({ multisendGas, approveGas });
+                  this.updateCurrentFee();
+                } else {
+                  const approveGasOrig = await this.txStore.getApproveGas();
+                  // Gas Limit: 66,181
+                  // Gas Used by Transaction: 44,121 (66.67%)
+                  const approveGas = Math.floor(
+                    parseInt(approveGasOrig) * 0.6667
+                  );
+                  this.setState({ approveGas });
+                }
               }
+            } catch (ex) {
+              console.log("3:", ex);
             }
-          } catch (ex) {
-            console.log("3:", ex);
-          }
-        })();
-      }
+          })();
+        }
 
-      updateCurrentFee() {
-        const id = setTimeout(() => {
-          clearTimeout(id);
-          this._updateCurrentFeeImpl();
-        }, 0);
-      }
+        updateCurrentFee() {
+          const id = setTimeout(() => {
+            clearTimeout(id);
+            this._updateCurrentFeeImpl();
+          }, 0);
+        }
 
-      _updateCurrentFeeImpl() {
-        const { multisendGas, approveGas, transferGas } = this.state;
-        const gasPrice = this.gasPriceStore.fullGasPriceInHex;
-        const approvePlusMultisendGas = new BN(multisendGas).plus(
-          new BN(approveGas)
-        );
-        if (approvePlusMultisendGas.gt(new BN(transferGas))) {
-          // no savings
-          console.log(
-            "_updateCurrentFeeImpl: approvePlusMultisendGas > transferGas",
-            approvePlusMultisendGas.toString(10),
-            transferGas,
-            multisendGas,
-            approveGas
+        _updateCurrentFeeImpl() {
+          const { multisendGas, approveGas, transferGas } = this.state;
+          const gasPrice = this.gasPriceStore.fullGasPriceInHex;
+          const approvePlusMultisendGas = new BN(multisendGas).add(
+            new BN(approveGas)
           );
-          // set non-zero reasonable value to ensure correct gas calculation
-          this.tokenStore.setCurrentFee("10000000000000");
-          return;
+          if (approvePlusMultisendGas.gt(new BN(transferGas))) {
+            // no savings
+            console.log(
+              "_updateCurrentFeeImpl: approvePlusMultisendGas > transferGas",
+              approvePlusMultisendGas.toString(10),
+              transferGas,
+              multisendGas,
+              approveGas
+            );
+            // set non-zero reasonable value to ensure correct gas calculation
+            this.tokenStore.setCurrentFee("10000000000000");
+            return;
+          }
+          const transferGasBN = new BN(transferGas);
+          if (transferGasBN.gt(approvePlusMultisendGas)) {
+            const savedGas = transferGasBN.sub(approvePlusMultisendGas);
+            const savedGasEthValue = new BigNumber(gasPrice).times(
+              new BigNumber(savedGas.toString())
+            );
+            const savedGasPerTxEthValue = savedGasEthValue.div(
+              this.tokenStore.totalNumberTx
+            );
+            const newCurrentFee = savedGasPerTxEthValue
+              .times(parseInt(this.gasPriceStore.selectedGasShare))
+              .div(100);
+            const newCurrentFeeRounded = newCurrentFee.dp(0, 1);
+            this.tokenStore.setCurrentFee(newCurrentFeeRounded.toString(10));
+            console.log(
+              "_updateCurrentFeeImpl",
+              multisendGas,
+              approveGas,
+              transferGas,
+              gasPrice,
+              approvePlusMultisendGas.toString(10),
+              savedGas.toString(10),
+              savedGasEthValue.toString(10),
+              savedGasPerTxEthValue.toString(10),
+              newCurrentFee.toString(10),
+              newCurrentFeeRounded.toString(10)
+            );
+          }
         }
-        const savedGas = new BN(transferGas).minus(approvePlusMultisendGas);
-        const savedGasEthValue = new BN(gasPrice).times(savedGas);
-        const savedGasPerTxEthValue = savedGasEthValue.div(
-          this.tokenStore.totalNumberTx
-        );
-        const newCurrentFee = savedGasPerTxEthValue
-          .times(new BN(parseInt(this.gasPriceStore.selectedGasShare)))
-          .div(100);
-        const newCurrentFeeRounded = newCurrentFee.dp(0, 1);
-        this.tokenStore.setCurrentFee(newCurrentFeeRounded.toString(10));
-        console.log(
-          "_updateCurrentFeeImpl",
-          multisendGas,
-          approveGas,
-          transferGas,
-          gasPrice,
-          approvePlusMultisendGas.toString(10),
-          savedGas.toString(10),
-          savedGasEthValue.toString(10),
-          savedGasPerTxEthValue.toString(10),
-          newCurrentFee.toString(10),
-          newCurrentFeeRounded.toString(10)
-        );
-      }
 
-      onNext = async (wizard) => {
-        // console.log(wizard.step)
-        if ("inspect" !== wizard.step.id) {
-          return;
+        async doNextStep(nextStep, isLoading) {
+          console.log("3: doNextStep");
+          if (isLoading) {
+            return;
+          }
+          try {
+            nextStep();
+          } catch (e) {
+            if (null === this.state.error) {
+              console.error(e);
+              swal({
+                title: "Parsing Error",
+                text: e.message,
+                icon: "error",
+              });
+            } else {
+              console.error(e, this.state.error);
+              swal(this.state.error);
+              this.setState({
+                error: null,
+              });
+            }
+          }
         }
 
-        try {
+        onNext = async (goToStep) => {
+          console.log("3: onNext");
           if (
-            new BN(this.tokenStore.totalBalance).gt(
-              new BN(this.tokenStore.defAccTokenBalance)
+            this.tokenStore.totalBalanceBN.gt(
+              this.tokenStore.defAccTokenBalanceBN
             )
           ) {
             console.error("Your balance is less than total to send");
-            swal({
-              title: "Insufficient token balance",
-              text: `You don't have enough tokens to send to all addresses.\nAmount needed: ${this.tokenStore.totalBalance} ${this.tokenStore.tokenSymbol}`,
-              icon: "error",
+            this.setState({
+              error: {
+                title: "Insufficient token balance",
+                text: `You don't have enough tokens to send to all addresses.\nAmount needed: ${this.tokenStore.totalBalance} ${this.tokenStore.tokenSymbol}`,
+                icon: "error",
+              },
             });
-            return;
+            throw new Error("Insufficient token balance");
           }
+
           const multisendGasEthValue =
             this.getMultisendPlusApproveGasEthValue();
-          const ethBalanceWei = toWei(this.tokenStore.ethBalance, "ether");
-          if (multisendGasEthValue.gt(new BN(ethBalanceWei))) {
+          if (multisendGasEthValue.gt(this.tokenStore.ethBalanceBN)) {
             const displayMultisendGasEthValue = parseFloat(
-              fromWei(multisendGasEthValue.toString(), "wei")
+              fromWei(multisendGasEthValue.toString(10), "ether")
             ).toFixed(5);
             console.error("please fund you account in ");
-            swal({
-              title:
-                "Insufficient " + this.web3Store.currencyTicker + " balance",
-              text: `You don't have enough ${this.web3Store.currencyTicker} to send to all addresses. Amount needed: ${displayMultisendGasEthValue} ${this.web3Store.currencyTicker}`,
-              icon: "error",
+            this.setState({
+              error: {
+                title:
+                  "Insufficient " + this.web3Store.currencyTicker + " balance",
+                text: `You don't have enough ${this.web3Store.currencyTicker} to send to all addresses. Amount needed: ${displayMultisendGasEthValue} ${this.web3Store.currencyTicker}`,
+                icon: "error",
+              },
             });
-            return;
+            throw new Error(
+              "Insufficient " + this.web3Store.currencyTicker + " balance"
+            );
           }
+
+          let nextStepId = 3;
           if (
             "0x000000000000000000000000000000000000bEEF" ===
             this.tokenStore.tokenAddress
           ) {
             // Ether
-            wizard.push("multisend");
           } else {
             if (
-              new BN(this.tokenStore.allowance).gte(
-                new BN(this.tokenStore.totalBalance)
-              )
+              this.tokenStore.allowanceBN.gte(this.tokenStore.totalBalanceBN)
             ) {
-              wizard.push("multisend");
             } else {
-              wizard.push("approve");
+              nextStepId = 2;
             }
           }
-        } catch (e) {
-          console.error(e);
-          swal({
-            title: "Parsing Error",
-            text: e.message,
-            icon: "error",
-          });
-        }
-      };
+          goToStep(nextStepId);
+        };
 
-      onGasPriceChange = (selected) => {
-        if (selected) {
-          this.gasPriceStore.setSelectedGasPrice(selected.value);
-          this.updateCurrentFee();
-        }
-      };
+        onGasPriceChange = (selected) => {
+          if (selected) {
+            this.gasPriceStore.setSelectedGasPrice(selected.value);
+            this.updateCurrentFee();
+          }
+        };
 
-      onGasShareChange = (selected) => {
-        if (selected) {
-          this.gasPriceStore.setSelectedGasShare(selected.value);
-          this.updateCurrentFee();
-        }
-      };
+        onGasShareChange = (selected) => {
+          if (selected) {
+            this.gasPriceStore.setSelectedGasShare(selected.value);
+            this.updateCurrentFee();
+          }
+        };
 
-      renderTokenBalance() {
-        if (
-          "0x000000000000000000000000000000000000bEEF" ===
-          this.tokenStore.tokenAddress
-        ) {
-          return null;
-        }
-        const value = parseFloat(this.tokenStore.defAccTokenBalance);
-        let displayValue = value.toFixed(5);
-        if ("0.00000" === displayValue) {
-          displayValue = value;
-        }
-        return (
-          <div className="send-info-i">
-            <p>Balance, {this.tokenStore.tokenSymbol}</p>
-            <p className="send-info-amount">{displayValue}</p>
-          </div>
-        );
-      }
-
-      renderTokenAllowance() {
-        if (
-          "0x000000000000000000000000000000000000bEEF" ===
-          this.tokenStore.tokenAddress
-        ) {
-          return null;
-        }
-        return (
-          <div className="send-info-i">
-            <p>Allowance, {this.tokenStore.tokenSymbol}</p>
-            <p className="send-info-amount">{this.tokenStore.allowance}</p>
-          </div>
-        );
-      }
-
-      renderTransferGasInfo() {
-        const gasPrice = this.gasPriceStore.fullGasPriceInHex;
-        const transferEthValue = new BN(gasPrice).times(
-          new BN(this.state.transferGas)
-        );
-        const displayTransferEthValue = parseFloat(
-          fromWei(transferEthValue.toString(), "wei")
-        ).toFixed(5);
-        if (
-          "0x000000000000000000000000000000000000bEEF" ===
-          this.tokenStore.tokenAddress
-        ) {
-          // Ether
+        renderTokenBalance() {
+          if (
+            "0x000000000000000000000000000000000000bEEF" ===
+            this.tokenStore.tokenAddress
+          ) {
+            return null;
+          }
+          const value = parseFloat(this.tokenStore.defAccTokenBalance);
+          let displayValue = value.toFixed(5);
+          if ("0.00000" === displayValue) {
+            displayValue = value;
+          }
           return (
             <div className="send-info-i">
-              <p>
-                Gas spent without Multisend, {this.web3Store.currencyTicker}
-              </p>
-              <p className="send-info-amount">{displayTransferEthValue}</p>
+              <p>Balance, {this.tokenStore.tokenSymbol}</p>
+              <p className="send-info-amount">{displayValue}</p>
             </div>
           );
-        } else {
+        }
+
+        renderTokenAllowance() {
           if (
-            new BN(this.tokenStore.allowance).gte(
-              new BN(this.tokenStore.totalBalance)
-            )
+            "0x000000000000000000000000000000000000bEEF" ===
+            this.tokenStore.tokenAddress
           ) {
+            return null;
+          }
+          return (
+            <div className="send-info-i">
+              <p>Allowance, {this.tokenStore.tokenSymbol}</p>
+              <p className="send-info-amount">{this.tokenStore.allowance}</p>
+            </div>
+          );
+        }
+
+        renderTransferGasInfo() {
+          const gasPrice = this.gasPriceStore.fullGasPriceInHex;
+          const transferEthValue = new BigNumber(gasPrice).times(
+            new BigNumber(this.state.transferGas)
+          );
+          const displayTransferEthValue = parseFloat(
+            fromWei(transferEthValue.toString(10), "ether")
+          ).toFixed(5);
+          if (
+            "0x000000000000000000000000000000000000bEEF" ===
+            this.tokenStore.tokenAddress
+          ) {
+            // Ether
             return (
               <div className="send-info-i">
                 <p>
@@ -376,58 +389,58 @@ export let ThirdStep = inject("UiStore")(
               </div>
             );
           } else {
-            return (
-              <div className="send-info-i">
-                <p>
-                  Gas spent without Multisend, {this.web3Store.currencyTicker}
-                </p>
-                <p className="send-info-amount">{displayTransferEthValue}</p>
-              </div>
-            );
+            if (
+              this.tokenStore.allowanceBN.gte(this.tokenStore.totalBalanceBN)
+            ) {
+              return (
+                <div className="send-info-i">
+                  <p>
+                    Gas spent without Multisend, {this.web3Store.currencyTicker}
+                  </p>
+                  <p className="send-info-amount">{displayTransferEthValue}</p>
+                </div>
+              );
+            } else {
+              return (
+                <div className="send-info-i">
+                  <p>
+                    Gas spent without Multisend, {this.web3Store.currencyTicker}
+                  </p>
+                  <p className="send-info-amount">{displayTransferEthValue}</p>
+                </div>
+              );
+            }
           }
         }
-      }
 
-      getMultisendPlusApproveGasEthValue() {
-        const gasPrice = this.gasPriceStore.fullGasPriceInHex;
-        const approvePlusMultisendGas = new BN(this.state.multisendGas).plus(
-          new BN(this.state.approveGas)
-        );
-        const multisendGasEthValue = new BN(gasPrice).times(
-          approvePlusMultisendGas
-        );
-        return multisendGasEthValue;
-      }
-
-      renderMultisendGasInfo() {
-        const gasPrice = this.gasPriceStore.fullGasPriceInHex;
-        const approvePlusMultisendGas = new BN(this.state.multisendGas).plus(
-          new BN(this.state.approveGas)
-        );
-        const multisendGasEthValue = new BN(gasPrice).times(
-          approvePlusMultisendGas
-        );
-        const displayMultisendGasEthValue = parseFloat(
-          fromWei(multisendGasEthValue.toString(), "wei"),
-          "wei"
-        ).toFixed(5);
-        if (
-          "0x000000000000000000000000000000000000bEEF" ===
-          this.tokenStore.tokenAddress
-        ) {
-          // Ether
-          return (
-            <div className="send-info-i">
-              <p>Gas spent with Multisend, {this.web3Store.currencyTicker}</p>
-              <p className="send-info-amount">{displayMultisendGasEthValue}</p>
-            </div>
+        getMultisendPlusApproveGasEthValue() {
+          const gasPrice = this.gasPriceStore.fullGasPriceInHex;
+          const approvePlusMultisendGas = new BN(this.state.multisendGas).add(
+            new BN(this.state.approveGas)
           );
-        } else {
+          const multisendGasEthValue = new BigNumber(gasPrice).times(
+            approvePlusMultisendGas.toString()
+          );
+          return new BN(multisendGasEthValue.toString(10));
+        }
+
+        renderMultisendGasInfo() {
+          const gasPrice = this.gasPriceStore.fullGasPriceInHex;
+          const approvePlusMultisendGas = new BN(this.state.multisendGas).add(
+            new BN(this.state.approveGas)
+          );
+          const multisendGasEthValue = new BigNumber(gasPrice).times(
+            approvePlusMultisendGas.toString()
+          );
+          const displayMultisendGasEthValue = parseFloat(
+            fromWei(multisendGasEthValue.toString(10), "ether"),
+            "wei"
+          ).toFixed(5);
           if (
-            new BN(this.tokenStore.allowance).gte(
-              new BN(this.tokenStore.totalBalance)
-            )
+            "0x000000000000000000000000000000000000bEEF" ===
+            this.tokenStore.tokenAddress
           ) {
+            // Ether
             return (
               <div className="send-info-i">
                 <p>Gas spent with Multisend, {this.web3Store.currencyTicker}</p>
@@ -437,67 +450,70 @@ export let ThirdStep = inject("UiStore")(
               </div>
             );
           } else {
-            return (
-              <div className="send-info-i">
-                <p>Gas spent with Multisend, {this.web3Store.currencyTicker}</p>
-                <p className="send-info-amount">N/A</p>
-              </div>
-            );
+            if (
+              this.tokenStore.allowanceBN.gte(this.tokenStore.totalBalanceBN)
+            ) {
+              return (
+                <div className="send-info-i">
+                  <p>
+                    Gas spent with Multisend, {this.web3Store.currencyTicker}
+                  </p>
+                  <p className="send-info-amount">
+                    {displayMultisendGasEthValue}
+                  </p>
+                </div>
+              );
+            } else {
+              return (
+                <div className="send-info-i">
+                  <p>
+                    Gas spent with Multisend, {this.web3Store.currencyTicker}
+                  </p>
+                  <p className="send-info-amount">N/A</p>
+                </div>
+              );
+            }
           }
         }
-      }
 
-      renderSavingsGasInfo() {
-        const { multisendGas, approveGas, transferGas } = this.state;
-        const gasPrice = this.gasPriceStore.fullGasPriceInHex;
-        const transferEthValue = new BN(gasPrice).times(
-          new BN(this.state.transferGas)
-        );
-        // const displayTransferEthValue = fromWei(
-        //   transferEthValue.toString(),
-        //   "wei"
-        // );
-        // const approveGasEthValue = new BN(gasPrice).times(new BN(this.state.approveGas))
-        // const displayApproveGasEthValue = fromWei(approveGasEthValue.toString(), "wei")
-        const approvePlusMultisendGas = new BN(multisendGas).plus(
-          new BN(approveGas)
-        );
-        const multisendGasEthValue = new BN(gasPrice).times(
-          approvePlusMultisendGas
-        );
-        // const displayMultisendGasEthValue = fromWei(
-        //   multisendGasEthValue.toString(),
-        //   "wei"
-        // );
-        const savedGas = new BN(transferGas).minus(approvePlusMultisendGas);
-        const savedGasEthValue = new BN(gasPrice).times(savedGas);
-        const displaySavedGasEthValue = parseFloat(
-          fromWei(savedGasEthValue.toString(), "wei")
-        ).toFixed(5);
-        let sign = "";
-        // if (approvePlusMultisendGas.gt(new BN(transferGas))) {
-        //   sign = "-"
-        // }
-        if (
-          "0x000000000000000000000000000000000000bEEF" ===
-          this.tokenStore.tokenAddress
-        ) {
-          // Ether
-          return (
-            <div className="send-info-i">
-              <p>Your gas savings, {this.web3Store.currencyTicker}</p>
-              <p className="send-info-amount">
-                {sign}
-                {displaySavedGasEthValue}
-              </p>
-            </div>
+        renderSavingsGasInfo() {
+          const { multisendGas, approveGas, transferGas } = this.state;
+          const gasPrice = this.gasPriceStore.fullGasPriceInHex;
+          // const transferEthValue = new BN(gasPrice).mul(
+          //   new BN(this.state.transferGas)
+          // );
+          // const displayTransferEthValue = fromWei(
+          //   transferEthValue.toString(10),
+          //   "ether"
+          // );
+          // const approveGasEthValue = new BN(gasPrice).mul(new BN(this.state.approveGas))
+          // const displayApproveGasEthValue = fromWei(approveGasEthValue.toString(10), "ether")
+          const approvePlusMultisendGas = new BN(multisendGas).add(
+            new BN(approveGas)
           );
-        } else {
+          // const multisendGasEthValue = new BN(gasPrice).mul(
+          //   approvePlusMultisendGas
+          // );
+          // const displayMultisendGasEthValue = fromWei(
+          //   multisendGasEthValue.toString(10),
+          //   "ether"
+          // );
+          const savedGas = new BN(transferGas).sub(approvePlusMultisendGas);
+          const savedGasEthValue = new BigNumber(gasPrice).times(
+            savedGas.toString()
+          );
+          const displaySavedGasEthValue = parseFloat(
+            fromWei(savedGasEthValue.toString(10), "ether")
+          ).toFixed(5);
+          let sign = "";
+          // if (approvePlusMultisendGas.gt(new BN(transferGas))) {
+          //   sign = "-"
+          // }
           if (
-            new BN(this.tokenStore.allowance).gte(
-              new BN(this.tokenStore.totalBalance)
-            )
+            "0x000000000000000000000000000000000000bEEF" ===
+            this.tokenStore.tokenAddress
           ) {
+            // Ether
             return (
               <div className="send-info-i">
                 <p>Your gas savings, {this.web3Store.currencyTicker}</p>
@@ -508,19 +524,35 @@ export let ThirdStep = inject("UiStore")(
               </div>
             );
           } else {
-            return (
-              <div className="send-info-i">
-                <p>Your gas savings, {this.web3Store.currencyTicker}</p>
-                <p className="send-info-amount">N/A</p>
-              </div>
-            );
+            if (
+              this.tokenStore.allowanceBN.gte(this.tokenStore.totalBalanceBN)
+            ) {
+              return (
+                <div className="send-info-i">
+                  <p>Your gas savings, {this.web3Store.currencyTicker}</p>
+                  <p className="send-info-amount">
+                    {sign}
+                    {displaySavedGasEthValue}
+                  </p>
+                </div>
+              );
+            } else {
+              return (
+                <div className="send-info-i">
+                  <p>Your gas savings, {this.web3Store.currencyTicker}</p>
+                  <p className="send-info-amount">N/A</p>
+                </div>
+              );
+            }
           }
         }
-      }
 
-      render() {
-        return (
-          <div>
+        render() {
+          this.props.handleStep(async () => {
+            await this.onNext(this.props.goToStep);
+          });
+
+          return (
             <div>
               <div className="description">
                 <ol>
@@ -610,10 +642,34 @@ export let ThirdStep = inject("UiStore")(
                 data={this.tokenStore.addressesData}
                 tokenSymbol={this.tokenStore.tokenSymbol}
               />
+              <div className="multisend-buttons">
+                <button
+                  className="multisend-button multisend-button_prev"
+                  onClick={async () =>
+                    await this.doNextStep(
+                      this.props.previousStep,
+                      this.props.isLoading || this.web3Store.loading
+                    )
+                  }
+                >
+                  Back
+                </button>
+                <button
+                  className="multisend-button multisend-button_next"
+                  onClick={async () =>
+                    await this.doNextStep(
+                      this.props.nextStep,
+                      this.props.isLoading || this.web3Store.loading
+                    )
+                  }
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </div>
-        );
+          );
+        }
       }
-    }
+    )
   )
 );
