@@ -324,13 +324,31 @@ class TokenStore {
           this.invalid_addresses.push(address);
           return;
         }
-        const web3 = this.web3Store.web3;
-        const code = await web3.eth.getCode(address);
-        if ("" !== code && "0x" !== code.toLowerCase()) {
-          console.log("Non-epty code for", address, "'" + code + "'");
-          this.invalid_addresses.push(address);
-          return;
-        }
+        // try {
+        //   await new Promise((resolve, reject) => {
+        //     const id = setTimeout(async () => {
+        //       clearTimeout(id);
+        //       const web3 = this.web3Store.web3;
+        //       try {
+        //         const code = await web3.eth.getCode(address);
+        //         if ("" !== code && "0x" !== code.toLowerCase()) {
+        //           // console.log("Non-empty code for", address, "'" + code + "'");
+        //           this.invalid_addresses.push(address);
+        //           reject(
+        //             new Error("Non-empty code for", address, "'" + code + "'")
+        //           );
+        //           return;
+        //         }
+        //         resolve(true);
+        //       } catch (e) {
+        //         reject(e);
+        //       }
+        //     }, 100 * index);
+        //   });
+        // } catch (e) {
+        //   console.log(e);
+        //   return;
+        // }
         let balance = Object.values(account)[0];
         this.totalBalance = new BigNumber(balance)
           .plus(this.totalBalance)
