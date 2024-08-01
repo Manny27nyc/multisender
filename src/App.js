@@ -47,13 +47,17 @@ import { PulseLoader } from "react-spinners";
 
 const WizardHeader = (props) => (
   <>
-    <h1 className="title">
-      <strong>Welcome to Token</strong> MultiSender
-    </h1>
-    <Line percent={((props.step + 1) / 4) * 100} className="pad-b" />
-    <div className="sweet-loading">
-      <PulseLoader color={"#123abc"} loading={props.loading} />
-    </div>
+    <header className="header">
+      <div className="multisend-container">
+        <h1 className="title">
+          <strong>Welcome to Token</strong> MultiSender
+        </h1>
+        <Line percent={((props.step + 1) / 4) * 100} className="pad-b" />
+        <div className="sweet-loading">
+          <PulseLoader color={"#123abc"} loading={props.loading} />
+        </div>
+      </div>
+    </header>
   </>
 );
 
