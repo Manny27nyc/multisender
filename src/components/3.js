@@ -281,6 +281,20 @@ export let ThirdStep = withWizard(
             throw new Error("Insufficient token balance");
           }
 
+          if (0 === this.state.transferGas) {
+            console.error("Gas spent without Multisend is not calculated yet");
+            this.setState({
+              error: {
+                title: "Gas spent without Multisend is not calculated yet",
+                text: "Wait until the Gas spent without Multisend parameter will be calculated please.",
+                icon: "error",
+              },
+            });
+            throw new Error(
+              "Gas spent without Multisend is not calculated yet"
+            );
+          }
+
           const multisendGasEthValue =
             this.getMultisendPlusApproveGasEthValue();
           if (multisendGasEthValue.gt(this.tokenStore.ethBalanceBN)) {
@@ -552,6 +566,8 @@ export let ThirdStep = withWizard(
             await this.onNext(this.props.goToStep);
           });
 
+          // const nextButtonDisabled = 0 === this.state.transferGas;
+          // disabled={nextButtonDisabled}
           return (
             <div>
               <div className="description">
