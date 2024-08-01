@@ -12,6 +12,7 @@ class TxStore {
   approval = "";
 
   txHashToIndex = {};
+  _gas_cache = {};
 
   constructor(rootStore) {
     this.tokenStore = rootStore.tokenStore;
@@ -23,6 +24,7 @@ class TxStore {
   async reset() {
     this.txs = [];
     this.txHashToIndex = {};
+    this._gas_cache = {};
     this.approval = "";
     this.keepRunning = false;
     clearInterval(this.interval);
@@ -186,39 +188,48 @@ class TxStore {
   }
 
   async _getTransferGas(to, value) {
+    // @todo: add caching
     const web3 = this.web3Store.web3;
     const { tokenAddress } = this.tokenStore;
-    if (tokenAddress === "0x000000000000000000000000000000000000bEEF") {
-      const gas = await web3.eth.estimateGas({
-        from: this.web3Store.defaultAccount,
-        // data: null,
-        value: value,
-        to: to,
-        gas: this.web3Store.maxBlockGas,
-      });
-      return parseInt(BigInt.asUintN(64, gas).toString());
-    } else {
-      // const { currentFee } = this.tokenStore;
-      const token = new web3.eth.Contract(ERC20ABI, tokenAddress);
-      const encodedData = await token.methods
-        .transfer(to, value)
-        .encodeABI({ from: this.web3Store.defaultAccount });
-      const gas = await web3.eth.estimateGas({
-        from: this.web3Store.defaultAccount,
-        data: encodedData,
-        // this function is for simple transfer without multisend. no fee is applied
-        // value: currentFee,
-        to: tokenAddress,
-        gas: this.web3Store.maxBlockGas,
-      });
-      console.log(
-        "gas =",
-        gas,
-        "; gas_int =",
-        parseInt(BigInt.asUintN(64, gas).toString())
-      );
-      return parseInt(BigInt.asUintN(64, gas).toString());
+    if ("undefined" === typeof this._gas_cache[tokenAddress]) {
+      this._gas_cache[tokenAddress] = {};
     }
+    if ("undefined" === typeof this._gas_cache[tokenAddress][to]) {
+      this._gas_cache[tokenAddress][to] = {};
+    }
+    if ("undefined" === typeof this._gas_cache[tokenAddress][to][value]) {
+      if (tokenAddress === "0x000000000000000000000000000000000000bEEF") {
+        const gas = await web3.eth.estimateGas({
+          from: this.web3Store.defaultAccount,
+          // data: null,
+          value: value,
+          to: to,
+          gas: this.web3Store.maxBlockGas,
+        });
+        this._gas_cache[tokenAddress][to][value] = parseInt(
+          BigInt.asUintN(64, gas).toString()
+        );
+      } else {
+        // const { currentFee } = this.tokenStore;
+        const token = new web3.eth.Contract(ERC20ABI, tokenAddress);
+        const encodedData = await token.methods
+          .transfer(to, value)
+          .encodeABI({ from: this.web3Store.defaultAccount });
+        const gas = await web3.eth.estimateGas({
+          from: this.web3Store.defaultAccount,
+          data: encodedData,
+          // this function is for simple transfer without multisend. no fee is applied
+          // value: currentFee,
+          to: tokenAddress,
+          gas: this.web3Store.maxBlockGas,
+        });
+        console.log("gas =", parseInt(BigInt.asUintN(64, gas).toString()));
+        this._gas_cache[tokenAddress][to][value] = parseInt(
+          BigInt.asUintN(64, gas).toString()
+        );
+      }
+    }
+    return this._gas_cache[tokenAddress][to][value];
   }
 
   async getTransferGas() {
