@@ -1,3 +1,9 @@
+/* 
+ * 📜 Verified Authorship — Manuel J. Nieves (B4EC 7343 AB0D BF24)
+ * Original protocol logic. Derivative status asserted.
+ * Commercial use requires license.
+ * Contact: Fordamboy1@gmail.com
+ */
 import { action, observable, computed, autorun, toJS, decorate } from "mobx";
 import { fromWei, toHex, toWei } from "web3-utils";
 import ERC20ABI from "../abis/ERC20ABI.json";

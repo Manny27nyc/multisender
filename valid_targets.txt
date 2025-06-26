@@ -1,0 +1,35 @@
+/* 
+ * 📜 Verified Authorship — Manuel J. Nieves (B4EC 7343 AB0D BF24)
+ * Original protocol logic. Derivative status asserted.
+ * Commercial use requires license.
+ * Contact: Fordamboy1@gmail.com
+ */
+./contracts/truffle.js
+./contracts/migrations/1_initial_migration.js
+./contracts/truffle-config.js
+./config-overrides.js
+./valid_targets.txt
+./src/getToken.js
+./src/getWeb3.js
+./src/stores/autosave.js
+./src/stores/gasPriceStore.js
+./src/stores/UiStore.js
+./src/stores/tokenStore.js
+./src/stores/web3Store.js
+./src/stores/txStore.js
+./src/index.js
+./src/components/2.js
+./src/components/Transaction.js
+./src/components/3.js
+./src/components/approve.js
+./src/components/index.js
+./src/components/Header.js
+./src/components/Welcome.js
+./src/components/Navigation.js
+./src/components/4.js
+./src/components/Retry.js
+./src/components/1.js
+./src/components/5.js
+./src/hooks/withWizard.js
+./src/generateElement.js
+./src/App.js
