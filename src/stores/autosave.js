@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import * as mobx from 'mobx';
 import storage from 'store2'
 

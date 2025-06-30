@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import Web3Store from './web3Store'
 import TokenStore from './tokenStore';
 import GasPriceStore from './gasPriceStore';

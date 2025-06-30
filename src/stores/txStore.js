@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import { action, observable, computed, autorun, toJS, decorate } from "mobx";
 import { fromWei, toHex, toWei } from "web3-utils";
 import ERC20ABI from "../abis/ERC20ABI.json";

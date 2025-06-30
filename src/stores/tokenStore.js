@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import { action, observable, computed, decorate } from "mobx";
 import ERC20ABI from "../abis/ERC20ABI.json";
 // import StormMultiSenderABI from '../abis/StormMultisender.json'

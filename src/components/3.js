@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import React from "react";
 import { inject, observer } from "mobx-react";
 import BigNumber from "bignumber.js";

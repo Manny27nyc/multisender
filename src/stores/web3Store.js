@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import { action, observable, decorate } from "mobx";
 import getWeb3 from "../getWeb3";
 import { sprintf } from "sprintf-js";

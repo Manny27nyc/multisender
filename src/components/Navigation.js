@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import React from "react";
 // import { WithWizard } from "react-albus";
 import { useWizard } from "react-use-wizard";

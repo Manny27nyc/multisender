@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 // https://github.com/timarney/react-app-rewired/issues/348#issuecomment-452199363
 const {
   override,

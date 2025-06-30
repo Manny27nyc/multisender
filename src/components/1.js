@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import React from "react";
 import { isAddress } from "web3-validator";
 import Form from "react-validation/build/form";

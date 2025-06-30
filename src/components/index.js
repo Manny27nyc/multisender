@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 export { Header } from './Header';
 export { FirstStep } from './1';
 export { SecondStep } from './2';

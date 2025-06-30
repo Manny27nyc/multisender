@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import { action, observable, computed, decorate } from "mobx";
 import { toHex, toWei } from "web3-utils";
 

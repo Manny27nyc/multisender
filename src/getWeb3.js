@@ -1,3 +1,4 @@
+// © Licensed Authorship: Manuel J. Nieves (See LICENSE for terms)
 import { Web3 } from "web3";
 
 const getAccounts = () => {
